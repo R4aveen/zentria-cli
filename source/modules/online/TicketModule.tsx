@@ -62,7 +62,7 @@ export const OnlineTicketModule: React.FC<OnlineTicketModuleProps> = ({ isActive
     );
 
     const menuItems: MenuItem[] = batches.map(b => ({
-      label: `✧ LOTE #${b.id} | ${b.customer_supplier?.name || 'S/N'} (${b.items_count || 0} items)`,
+      label: `✧ LOTE #${b.id} | ${b.customer_supplier?.name || 'S/N'} (${b.received_quantity || 0} items de ${b.expected_quantity || 0})`,
       value: String(b.id)
     }));
 

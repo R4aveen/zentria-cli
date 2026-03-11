@@ -4,6 +4,7 @@ import { themes, themeNames } from '../constants/themes.js';
 import { useTheme } from '../contexts/ThemeContext.js';
 import { GradientText } from './common/GradientText.js';
 import { tinyAsciiLogo } from '../constants/ascii-art.js';
+import { useTerminalSize } from '../hooks/useTerminalSize.js';
 
 interface ThemeSelectorProps {
   onBack: () => void;
@@ -15,6 +16,9 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ onBack, isActive =
   const [selectedIndex, setSelectedIndex] = useState(
     themeNames.indexOf(currentTheme.name)
   );
+  const { columns, rows } = useTerminalSize();
+  const isWide = columns >= 80;
+  const isShort = rows < 28;
 
   const previewTheme = themes[themeNames[selectedIndex]!]!;
 
@@ -39,8 +43,8 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ onBack, isActive =
     <Box flexDirection="column" padding={1}>
       <Text bold underline color={previewTheme.primary}>✴︎ SELECCIONAR TEMA</Text>
 
-      <Box marginTop={1} flexDirection="row" gap={2}>
-        <Box flexDirection="column" flexBasis="50%">
+      <Box marginTop={1} flexDirection={isWide ? 'row' : 'column'} gap={2}>
+        <Box flexDirection="column" flexBasis={isWide ? '50%' : undefined}>
           {themeNames.map((name, index) => {
             const t = themes[name]!;
             const isSelected = index === selectedIndex;
@@ -62,25 +66,27 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ onBack, isActive =
           })}
         </Box>
 
-        <Box flexDirection="column" flexBasis="50%" borderStyle="double" borderColor={previewTheme.accent} paddingX={1}>
-          <Text bold color={previewTheme.primary}>₊˚ෆ Vista Previa</Text>
-          <Box marginTop={1}>
-            <GradientText text={tinyAsciiLogo} gradient={previewTheme.gradient} />
+        {!isShort && (
+          <Box flexDirection="column" flexBasis={isWide ? '50%' : undefined} borderStyle="double" borderColor={previewTheme.accent} paddingX={1}>
+            <Text bold color={previewTheme.primary}>₊˚ෆ Vista Previa</Text>
+            <Box marginTop={1}>
+              <GradientText text={tinyAsciiLogo} gradient={previewTheme.gradient} />
+            </Box>
+            <Box marginTop={1} flexDirection="column">
+              <Text color={previewTheme.primary}>╰┈➤ Color primario</Text>
+              <Text color={previewTheme.secondary}>╰┈➤ Color secundario</Text>
+              <Text color={previewTheme.accent}>╰┈➤ Color acento</Text>
+              <Text color={previewTheme.text}>╰┈➤ Color texto</Text>
+              <Text color={previewTheme.textDim}>╰┈➤ Color sutil</Text>
+            </Box>
+            <Box marginTop={1} borderStyle="single" borderColor={previewTheme.borderActive} paddingX={1}>
+              <Text color={previewTheme.primary} bold>✧ Item seleccionado</Text>
+            </Box>
+            <Box borderStyle="single" borderColor={previewTheme.textMuted} paddingX={1}>
+              <Text color={previewTheme.textDim}>· Item normal</Text>
+            </Box>
           </Box>
-          <Box marginTop={1} flexDirection="column">
-            <Text color={previewTheme.primary}>╰┈➤ Color primario</Text>
-            <Text color={previewTheme.secondary}>╰┈➤ Color secundario</Text>
-            <Text color={previewTheme.accent}>╰┈➤ Color acento</Text>
-            <Text color={previewTheme.text}>╰┈➤ Color texto</Text>
-            <Text color={previewTheme.textDim}>╰┈➤ Color sutil</Text>
-          </Box>
-          <Box marginTop={1} borderStyle="single" borderColor={previewTheme.borderActive} paddingX={1}>
-            <Text color={previewTheme.primary} bold>✧ Item seleccionado</Text>
-          </Box>
-          <Box borderStyle="single" borderColor={previewTheme.textMuted} paddingX={1}>
-            <Text color={previewTheme.textDim}>· Item normal</Text>
-          </Box>
-        </Box>
+        )}
       </Box>
 
       <Box marginTop={1}>

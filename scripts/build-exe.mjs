@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import esbuild from 'esbuild';
@@ -15,6 +15,54 @@ const EXE = join(BUILD_DIR, 'zentria-cli.exe');
 const SEA_CONFIG = join(BUILD_DIR, 'sea-config.json');
 
 if (!existsSync(BUILD_DIR)) mkdirSync(BUILD_DIR, { recursive: true });
+
+// Leer variables de .env.production para inyectarlas en build-time
+const envProdPath = join(ROOT, '.env.production');
+const envVars = { NODE_ENV: 'production' };
+if (existsSync(envProdPath)) {
+  const envContent = readFileSync(envProdPath, 'utf-8');
+  for (const line of envContent.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIndex = trimmed.indexOf('=');
+    if (eqIndex === -1) continue;
+    const key = trimmed.slice(0, eqIndex).trim();
+    const value = trimmed.slice(eqIndex + 1).trim();
+    envVars[key] = value;
+  }
+  console.log('\n✧ Variables de .env.production:', Object.keys(envVars).join(', '));
+} else {
+  console.warn('\n⚠ No se encontró .env.production, usando valores por defecto');
+}
+
+// Plugin que reemplaza process.env['KEY'] (bracket notation) con valores de producción
+const envPlugin = {
+  name: 'inject-env',
+  setup(build) {
+    build.onLoad({ filter: /\.(ts|tsx|js|mjs)$/ }, async (args) => {
+      if (args.path.includes('node_modules')) return undefined;
+      let contents = readFileSync(args.path, 'utf-8');
+      let modified = false;
+      for (const [key, value] of Object.entries(envVars)) {
+        const pattern1 = `process.env['${key}']`;
+        const pattern2 = `process.env["${key}"]`;
+        if (contents.includes(pattern1)) {
+          contents = contents.replaceAll(pattern1, JSON.stringify(value));
+          modified = true;
+        }
+        if (contents.includes(pattern2)) {
+          contents = contents.replaceAll(pattern2, JSON.stringify(value));
+          modified = true;
+        }
+      }
+      if (modified) {
+        const loader = args.path.endsWith('.tsx') ? 'tsx' : args.path.endsWith('.ts') ? 'ts' : 'js';
+        return { contents, loader };
+      }
+      return undefined;
+    });
+  },
+};
 
 // 1. Bundle ESM con esbuild (modo producción + createRequire para Node builtins)
 console.log('\n✧ Empaquetando con esbuild...');
@@ -33,7 +81,7 @@ await esbuild.build({
     js: "import{createRequire}from'node:module';const require=createRequire(import.meta.url);",
   },
   minify: true,
-  plugins: [{
+  plugins: [envPlugin, {
     name: 'stub-devtools',
     setup(build) {
       build.onResolve({ filter: /^react-devtools-core$/ }, () => ({

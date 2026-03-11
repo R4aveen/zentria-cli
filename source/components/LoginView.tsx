@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, Box } from 'ink';
+import { Text, Box, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import { ApiService } from '../services/api.service.js';
 import { AuthService } from '../services/auth.service.js';
@@ -23,6 +23,12 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
   const [error, setError] = useState<string | null>(null);
   const { columns } = useTerminalSize();
   const { theme } = useTheme();
+
+  useInput((_input, key) => {
+    if (step === 'credentials' && key.tab) {
+      setFocus(prev => prev === 'email' ? 'password' : 'email');
+    }
+  });
 
   const handleSubmit = async () => {
     if (!email || !password) return;

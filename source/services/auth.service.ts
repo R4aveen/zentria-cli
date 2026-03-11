@@ -1,9 +1,19 @@
 import Conf from 'conf';
 import dotenv from 'dotenv';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { themes, defaultThemeName, type Theme } from '../constants/themes.js';
 
-// Load .env from the current working directory or the directory of the script
-dotenv.config();
+// En producción (exe), esbuild inyecta las variables en build-time.
+// En desarrollo, cargar .env.develop o .env como fallback.
+if (process.env['NODE_ENV'] !== 'production') {
+  const devEnvPath = join(process.cwd(), '.env.develop');
+  if (existsSync(devEnvPath)) {
+    dotenv.config({ path: devEnvPath });
+  } else {
+    dotenv.config();
+  }
+}
 
 const config = new Conf({
   projectName: 'zentria-cli',

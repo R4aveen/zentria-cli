@@ -8,6 +8,8 @@ export function useTerminalSize() {
 
   useEffect(() => {
     const handleResize = () => {
+      // Limpiar pantalla para evitar artefactos de renders anteriores
+      process.stdout.write('\x1b[2J\x1b[H');
       setSize({
         columns: process.stdout.columns || 80,
         rows: process.stdout.rows || 24,

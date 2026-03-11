@@ -26,4 +26,19 @@ meow(
 	},
 );
 
-render(<App />);
+// Establecer título de la ventana de terminal
+process.stdout.write('\x1b]0;Zentria CLI\x07');
+
+// Entrar al alternate screen buffer para evitar scroll y artefactos al redimensionar
+process.stdout.write('\x1b[?1049h\x1b[2J\x1b[H');
+
+const instance = render(<App />);
+
+instance.waitUntilExit().then(() => {
+	process.stdout.write('\x1b[?1049l');
+});
+
+// Restaurar buffer original al cerrar
+process.on('exit', () => {
+	process.stdout.write('\x1b[?1049l');
+});
