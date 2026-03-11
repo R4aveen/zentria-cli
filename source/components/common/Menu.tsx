@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
+import { useTheme } from '../../contexts/ThemeContext.js';
 
 export interface MenuItem {
   label: string;
@@ -15,6 +16,7 @@ interface MenuProps {
 
 export const Menu: React.FC<MenuProps> = ({ items, onSelect, title, isActive = true }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const { theme } = useTheme();
 
   useInput((_input, key) => {
     if (!isActive) return;
@@ -34,7 +36,7 @@ export const Menu: React.FC<MenuProps> = ({ items, onSelect, title, isActive = t
     <Box flexDirection="column" paddingY={1}>
       {title && (
         <Box marginBottom={1} paddingX={1}>
-          <Text bold color="#B0C4DE" underline>{title}</Text>
+          <Text bold color={theme.text} underline>{title}</Text>
         </Box>
       )}
       <Box flexDirection="column">
@@ -44,11 +46,11 @@ export const Menu: React.FC<MenuProps> = ({ items, onSelect, title, isActive = t
             <Box 
               key={item.value} 
               borderStyle="round" 
-              borderColor={isSelected ? '#DDA0DD' : '#4A4A4A'}
+              borderColor={isSelected ? theme.borderActive : theme.textMuted}
               paddingX={1}
               marginBottom={0}
             >
-              <Text color={isSelected ? '#E0B0FF' : '#B0B0B0'} bold={isSelected}>
+              <Text color={isSelected ? theme.primary : '#B0B0B0'} bold={isSelected}>
                 {isSelected ? '✧ ' : '· '}
                 {item.label}
               </Text>

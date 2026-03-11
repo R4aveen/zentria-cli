@@ -4,6 +4,10 @@ import TextInput from 'ink-text-input';
 import { ApiService } from '../services/api.service.js';
 import { AuthService } from '../services/auth.service.js';
 import { Menu, MenuItem } from './common/Menu.js';
+import { useTerminalSize } from '../hooks/useTerminalSize.js';
+import { getAsciiLogo, tinyAsciiLogo } from '../constants/ascii-art.js';
+import { useTheme } from '../contexts/ThemeContext.js';
+import { GradientText } from './common/GradientText.js';
 
 interface Props {
   onLoginSuccess: (token: string) => void;
@@ -17,6 +21,8 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
   const [focus, setFocus] = useState<'email' | 'password'>('email');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { columns } = useTerminalSize();
+  const { theme } = useTheme();
 
   const handleSubmit = async () => {
     if (!email || !password) return;
@@ -43,8 +49,11 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
 
   if (step === 'mode') {
     return (
-      <Box flexDirection="column" padding={1} borderStyle="round" borderColor="#7B68EE">
-        <Text bold color="#E0B0FF">₊⊹ ࣪ ִֶָ☾. ZENTRIA CLI ✴︎ SELECCIONE MODO</Text>
+      <Box flexDirection="column" padding={1} borderStyle="round" borderColor={theme.border}>
+        <Box marginBottom={1}>
+          <GradientText text={getAsciiLogo(columns)} gradient={theme.gradient} />
+        </Box>
+        <Text bold color={theme.primary}>₊⊹ ࣪ ִֶָ☾. SELECCIONE MODO ✴︎</Text>
         <Menu
           items={[
             { label: '⋆ Modo Online (Requiere Autenticación)', value: 'online' },
@@ -57,8 +66,13 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
   }
 
   return (
-    <Box flexDirection="column" padding={1} borderStyle="round" borderColor="#7B68EE">
-      <Text bold color="#E0B0FF">₊⊹ ࣪ ִֶָ☾. ZENTRIA CLI ✴︎ ACCESO RESTRINGIDO</Text>
+    <Box flexDirection="column" padding={1} borderStyle="round" borderColor={theme.border}>
+      {columns >= 55 && (
+        <Box marginBottom={1}>
+          <GradientText text={tinyAsciiLogo} gradient={theme.gradient} />
+        </Box>
+      )}
+      <Text bold color={theme.primary}>₊⊹ ࣪ ִֶָ☾. ACCESO RESTRINGIDO ✴︎</Text>
       <Box marginTop={1}>
         <Text dimColor>API: {AuthService.getBaseUrl()}</Text>
       </Box>
@@ -92,7 +106,7 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
 
       <Box marginTop={1} flexDirection="column">
         {loading ? (
-          <Text color="#DDA0DD">☕︎ Validando credenciales en el servidor...</Text>
+          <Text color={theme.secondary}>☕︎ Validando credenciales en el servidor...</Text>
         ) : (
           <Text dimColor>TAB para cambiar campo | ENTER para ingresar</Text>
         )}

@@ -1,5 +1,6 @@
 import Conf from 'conf';
 import dotenv from 'dotenv';
+import { themes, defaultThemeName, type Theme } from '../constants/themes.js';
 
 // Load .env from the current working directory or the directory of the script
 dotenv.config();
@@ -15,6 +16,7 @@ export class AuthService {
   private static BASE_URL_KEY = 'api_base_url';
   private static MODE_KEY = 'app_mode';
   private static BRANCH_ID_KEY = 'branch_id';
+  private static THEME_KEY = 'ui_theme';
 
   static setToken(token: string) {
     config.set(this.TOKEN_KEY, token);
@@ -66,5 +68,18 @@ export class AuthService {
       process.env['CHROME_PATH'] ||
       'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
     );
+  }
+
+  static setTheme(themeName: string) {
+    config.set(this.THEME_KEY, themeName);
+  }
+
+  static getThemeName(): string {
+    return (config.get(this.THEME_KEY) as string) || defaultThemeName;
+  }
+
+  static getTheme(): Theme {
+    const name = this.getThemeName();
+    return themes[name] || themes[defaultThemeName]!;
   }
 }

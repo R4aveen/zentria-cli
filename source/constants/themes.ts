@@ -1,0 +1,168 @@
+export interface Theme {
+  name: string;
+  label: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  border: string;
+  borderActive: string;
+  text: string;
+  textDim: string;
+  textMuted: string;
+  success: string;
+  error: string;
+  errorText: string;
+  modeBadgeOnline: string;
+  modeBadgeOffline: string;
+  gradient: string[];
+}
+
+export const themes: Record<string, Theme> = {
+  lavender: {
+    name: 'lavender',
+    label: '✧ Lavanda ₊˚ෆ',
+    primary: '#E0B0FF',
+    secondary: '#DDA0DD',
+    accent: '#7B68EE',
+    border: '#7B68EE',
+    borderActive: '#DDA0DD',
+    text: '#B0C4DE',
+    textDim: '#696969',
+    textMuted: '#4A4A4A',
+    success: '#2E8B57',
+    error: '#8B0000',
+    errorText: '#FF6B6B',
+    modeBadgeOnline: '#5B5EA6',
+    modeBadgeOffline: '#8B5CF6',
+    gradient: ['#C084FC', '#D0A0FF', '#E0B0FF', '#DDA0DD', '#D8BFD8', '#B0C4DE', '#9DB5D0', '#7B68EE'],
+  },
+  ocean: {
+    name: 'ocean',
+    label: '⋆ Océano 🌊',
+    primary: '#00CED1',
+    secondary: '#20B2AA',
+    accent: '#1E90FF',
+    border: '#1E90FF',
+    borderActive: '#48D1CC',
+    text: '#87CEEB',
+    textDim: '#5F6B7A',
+    textMuted: '#3A4A5A',
+    success: '#2E8B57',
+    error: '#8B0000',
+    errorText: '#FF6B6B',
+    modeBadgeOnline: '#006994',
+    modeBadgeOffline: '#4682B4',
+    gradient: ['#E0FFFF', '#48D1CC', '#40E0D0', '#00CED1', '#20B2AA', '#00BFFF', '#1E90FF', '#0047AB'],
+  },
+  sakura: {
+    name: 'sakura',
+    label: '☾ Sakura 🌸',
+    primary: '#FFB7C5',
+    secondary: '#FF69B4',
+    accent: '#DB7093',
+    border: '#DB7093',
+    borderActive: '#FF69B4',
+    text: '#F4C2C2',
+    textDim: '#8B6969',
+    textMuted: '#5A3A3A',
+    success: '#2E8B57',
+    error: '#8B0000',
+    errorText: '#FF6B6B',
+    modeBadgeOnline: '#C71585',
+    modeBadgeOffline: '#DA70D6',
+    gradient: ['#FFF0F5', '#FFB7C5', '#FF69B4', '#FF1493', '#DB7093', '#C71585', '#EE82EE', '#DA70D6'],
+  },
+  emerald: {
+    name: 'emerald',
+    label: '𖦹 Esmeralda 🍀',
+    primary: '#50C878',
+    secondary: '#2ECC71',
+    accent: '#1ABC9C',
+    border: '#1ABC9C',
+    borderActive: '#2ECC71',
+    text: '#98D8C8',
+    textDim: '#5A7A6A',
+    textMuted: '#3A5A4A',
+    success: '#27AE60',
+    error: '#8B0000',
+    errorText: '#FF6B6B',
+    modeBadgeOnline: '#0D9970',
+    modeBadgeOffline: '#16A085',
+    gradient: ['#AAFFC3', '#00FA9A', '#50C878', '#2ECC71', '#27AE60', '#1ABC9C', '#16A085', '#0D9970'],
+  },
+  sunset: {
+    name: 'sunset',
+    label: '✴︎ Atardecer 🌅',
+    primary: '#FFA07A',
+    secondary: '#FF7F50',
+    accent: '#FF6347',
+    border: '#FF6347',
+    borderActive: '#FF7F50',
+    text: '#FFDAB9',
+    textDim: '#8B7355',
+    textMuted: '#5A4A3A',
+    success: '#2E8B57',
+    error: '#8B0000',
+    errorText: '#FF6B6B',
+    modeBadgeOnline: '#E74C3C',
+    modeBadgeOffline: '#FF4500',
+    gradient: ['#FFE4B5', '#FFD700', '#FFA500', '#FF8C00', '#FF7F50', '#FF6347', '#FF4500', '#E74C3C'],
+  },
+  frost: {
+    name: 'frost',
+    label: '☁︎ Escarcha ❄',
+    primary: '#B0E0E6',
+    secondary: '#87CEEB',
+    accent: '#4682B4',
+    border: '#4682B4',
+    borderActive: '#87CEFA',
+    text: '#ADD8E6',
+    textDim: '#5F7A8A',
+    textMuted: '#3A5A6A',
+    success: '#2E8B57',
+    error: '#8B0000',
+    errorText: '#FF6B6B',
+    modeBadgeOnline: '#5F9EA0',
+    modeBadgeOffline: '#6495ED',
+    gradient: ['#F0F8FF', '#E0FFFF', '#B0E0E6', '#ADD8E6', '#87CEEB', '#87CEFA', '#6495ED', '#4682B4'],
+  },
+  midnight: {
+    name: 'midnight',
+    label: '☾ Medianoche 🌙',
+    primary: '#9370DB',
+    secondary: '#6A5ACD',
+    accent: '#483D8B',
+    border: '#483D8B',
+    borderActive: '#6A5ACD',
+    text: '#B8A9C9',
+    textDim: '#6A6A8A',
+    textMuted: '#3A3A5A',
+    success: '#2E8B57',
+    error: '#8B0000',
+    errorText: '#FF6B6B',
+    modeBadgeOnline: '#4B0082',
+    modeBadgeOffline: '#663399',
+    gradient: ['#E6E6FA', '#D8BFD8', '#DDA0DD', '#BA55D3', '#9370DB', '#8A2BE2', '#6A5ACD', '#483D8B'],
+  },
+  rose: {
+    name: 'rose',
+    label: '⋆ Rosa Dorado ✧',
+    primary: '#F4A8C1',
+    secondary: '#E8909C',
+    accent: '#B76E79',
+    border: '#B76E79',
+    borderActive: '#E8909C',
+    text: '#F0D0D9',
+    textDim: '#8A6A6F',
+    textMuted: '#5A4A4F',
+    success: '#2E8B57',
+    error: '#8B0000',
+    errorText: '#FF6B6B',
+    modeBadgeOnline: '#996666',
+    modeBadgeOffline: '#CC8899',
+    gradient: ['#FFF0F0', '#FFE0E8', '#F4C2D0', '#F4A8C1', '#E8909C', '#D4788A', '#B76E79', '#996666'],
+  },
+};
+
+export const themeNames = Object.keys(themes);
+export const defaultThemeName = 'lavender';
