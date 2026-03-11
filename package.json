@@ -67,4 +67,5 @@
 			"react/prop-types": "off"
 		}
 	},
-	"prettier": "@vd
+	"prettier": "@vdemedes/prettier-config"
+}
