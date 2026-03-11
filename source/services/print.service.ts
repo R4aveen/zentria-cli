@@ -14,8 +14,10 @@ import {
 import { TechnicalItem } from '../types/api.types.js';
 import { AuthService } from './auth.service.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const _dirname = (() => {
+  try { return path.dirname(fileURLToPath(import.meta.url)); }
+  catch { return typeof __dirname !== 'undefined' ? __dirname : process.cwd(); }
+})();
 
 export class PrintService {
   private static extractValue(val: any): string {
@@ -34,13 +36,20 @@ export class PrintService {
     return 'N/A';
   }
 
-  private static getLogoDataUrl(): string {
-    const logoPath = path.join(__dirname, '..', '..', 'public', 'logo_etiqueta.png');
-    if (fs.existsSync(logoPath)) {
-      const logoBuffer = fs.readFileSync(logoPath);
-      return `data:image/png;base64,${logoBuffer.toString('base64')}`;
-    }
-    return '';
+  private static async getLogoBuffer(): Promise<Buffer | null> {
+    try {
+      const sea = await import('node:sea') as any;
+      if (sea.isSea()) {
+        return Buffer.from(sea.getRawAsset('logo_etiqueta.png'));
+      }
+    } catch {}
+    const logoPath = path.join(_dirname, '..', '..', 'public', 'logo_etiqueta.png');
+    return fs.existsSync(logoPath) ? fs.readFileSync(logoPath) : null;
+  }
+
+  private static async getLogoDataUrl(): Promise<string> {
+    const buf = await this.getLogoBuffer();
+    return buf ? `data:image/png;base64,${buf.toString('base64')}` : '';
   }
 
   static async generateHtml(item: TechnicalItem): Promise<string> {
@@ -58,7 +67,7 @@ export class PrintService {
     const equipmentType = (this.extractValue(item.equipment_type) || 'notebook').toLowerCase();
     const observations = this.extractValue(details.observations) || 'SIN OBSERVACIÓN';
 
-    const logoDataUrl = this.getLogoDataUrl();
+    const logoDataUrl = await this.getLogoDataUrl();
 
     // Specs como texto inline (fluye como párrafo justificado, igual que el componente React)
     let specsFragments: string[] = [
@@ -344,8 +353,7 @@ export class PrintService {
     const qrSerialBuffer = await QRCode.toBuffer(serialNumber, { type: 'png', margin: 1, width: 150 });
 
     // --- Logo ---
-    const logoPath = path.join(__dirname, '..', '..', 'public', 'logo_etiqueta.png');
-    const logoBuffer = fs.existsSync(logoPath) ? fs.readFileSync(logoPath) : null;
+    const logoBuffer = await this.getLogoBuffer();
 
     // --- Specs text (mismo formato que Python legacy) ---
     let specsText = `Observación: ${observations} `;

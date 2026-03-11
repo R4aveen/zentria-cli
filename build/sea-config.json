@@ -1,0 +1,12 @@
+{
+  "main": "C:\\Users\\Usuario\\Desktop\\Zentria\\personal_proyects\\Gemini\\zentria-cli\\scripts\\sea-entry.cjs",
+  "output": "C:\\Users\\Usuario\\Desktop\\Zentria\\personal_proyects\\Gemini\\zentria-cli\\build\\sea-prep.blob",
+  "disableExperimentalSEAWarning": true,
+  "useSnapshot": false,
+  "useCodeCache": true,
+  "assets": {
+    "bundle.mjs": "C:\\Users\\Usuario\\Desktop\\Zentria\\personal_proyects\\Gemini\\zentria-cli\\build\\bundle.mjs",
+    "logo_etiqueta.png": "C:\\Users\\Usuario\\Desktop\\Zentria\\personal_proyects\\Gemini\\zentria-cli\\public\\logo_etiqueta.png",
+    "yoga.wasm": "C:\\Users\\Usuario\\Desktop\\Zentria\\personal_proyects\\Gemini\\zentria-cli\\node_modules\\yoga-wasm-web\\dist\\yoga.wasm"
+  }
+}
