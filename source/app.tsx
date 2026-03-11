@@ -77,7 +77,7 @@ const Shell: React.FC<ShellProps> = ({ mode, onLogout }) => {
 
     if (key.escape) {
       if (view === 'menu') {
-        exit();
+        // MainMenuView handles ESC internally (submenus / exit)
       } else if (view !== 'global-scanner') {
         setView('menu');
         setShowPrompt(false);
@@ -115,7 +115,7 @@ const Shell: React.FC<ShellProps> = ({ mode, onLogout }) => {
       </Box>
 
       <Box flexGrow={1} borderStyle="round" borderColor={!showPrompt ? theme.borderActive : 'gray'} paddingX={1}>
-        {view === 'menu' && <MainMenuView setView={setView} onLogout={onLogout} isActive={!showPrompt} />}
+        {view === 'menu' && <MainMenuView setView={setView} onLogout={onLogout} onExit={() => exit()} isActive={!showPrompt} />}
         {view === 'theme' && <ThemeSelector onBack={() => setView('menu')} isActive={!showPrompt} />}
         {view === 'info' && (
           <Box flexDirection="column" padding={1}>
