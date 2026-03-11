@@ -26,7 +26,7 @@ meow(
 	},
 );
 
-// Establecer título de la ventana de terminal
+// Establecer título de la ventana del terminal
 process.stdout.write('\x1b]0;Zentria CLI\x07');
 
 // Entrar al alternate screen buffer para evitar scroll y artefactos al redimensionar

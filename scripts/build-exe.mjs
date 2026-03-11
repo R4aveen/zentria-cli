@@ -4,6 +4,7 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import esbuild from 'esbuild';
+import * as ResEdit from 'resedit';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -13,6 +14,7 @@ const ENTRY = join(ROOT, 'scripts', 'sea-entry.cjs');
 const BLOB = join(BUILD_DIR, 'sea-prep.blob');
 const EXE = join(BUILD_DIR, 'zentria-cli.exe');
 const SEA_CONFIG = join(BUILD_DIR, 'sea-config.json');
+const ICO_PATH = join(ROOT, 'public', 'favicon.ico');
 
 if (!existsSync(BUILD_DIR)) mkdirSync(BUILD_DIR, { recursive: true });
 
@@ -121,12 +123,51 @@ execSync(`node --experimental-sea-config ${SEA_CONFIG}`, { stdio: 'inherit' });
 console.log('\n✧ Copiando runtime de Node.js...');
 copyFileSync(process.execPath, EXE);
 
-// 5. Inyectar blob en el ejecutable
+// 5. Inyectar blob en el ejecutable PRIMERO
 console.log('\n✧ Inyectando aplicación en ejecutable...');
 execSync([
   `npx postject "${EXE}" NODE_SEA_BLOB "${BLOB}"`,
   '--sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
   '--overwrite',
 ].join(' '), { stdio: 'inherit' });
+
+// 6. Aplicar icono y metadatos con resedit DESPUÉS
+console.log('\n✧ Aplicando icono y metadatos...');
+{
+  const exeData = readFileSync(EXE);
+  const exe = ResEdit.NtExecutable.from(exeData, { ignoreCert: true });
+  const res = ResEdit.NtExecutableResource.from(exe);
+
+  // Icono
+  const icoData = readFileSync(ICO_PATH);
+  const iconFile = ResEdit.Data.IconFile.from(icoData);
+  ResEdit.Resource.IconGroupEntry.replaceIconsForResource(
+    res.entries, 1, 1033,
+    iconFile.icons.map(i => i.data),
+  );
+
+  // Metadatos de versión
+  const viEntries = ResEdit.Resource.VersionInfo.fromEntries(res.entries);
+  const vi = viEntries[0] || ResEdit.Resource.VersionInfo.createEmpty();
+  vi.setFileVersion(1, 0, 0, 0);
+  vi.setProductVersion(1, 0, 0, 0);
+  vi.setStringValues({
+    lang: 1033,
+    codepage: 1200,
+  }, {
+    ProductName: 'Zentria CLI',
+    FileDescription: 'Zentria CLI - Revisión Técnica en Bodega',
+    CompanyName: 'Zentria',
+    LegalCopyright: 'Zentria © 2026',
+    OriginalFilename: 'zentria-cli.exe',
+    FileVersion: '1.0.0',
+    ProductVersion: '1.0.0',
+  });
+  vi.outputToResourceEntries(res.entries);
+
+  res.outputResource(exe);
+  writeFileSync(EXE, Buffer.from(exe.generate()));
+  console.log('  ✓ Icono y metadatos aplicados');
+}
 
 console.log(`\n✴︎ ¡Ejecutable generado exitosamente! → ${EXE}`);
