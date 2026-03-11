@@ -34,7 +34,7 @@ export const Menu: React.FC<MenuProps> = ({ items, onSelect, title, isActive = t
     <Box flexDirection="column" paddingY={1}>
       {title && (
         <Box marginBottom={1} paddingX={1}>
-          <Text bold color="cyan" underline>{title}</Text>
+          <Text bold color="#B0C4DE" underline>{title}</Text>
         </Box>
       )}
       <Box flexDirection="column">
@@ -44,12 +44,12 @@ export const Menu: React.FC<MenuProps> = ({ items, onSelect, title, isActive = t
             <Box 
               key={item.value} 
               borderStyle="round" 
-              borderColor={isSelected ? 'yellow' : 'gray'}
+              borderColor={isSelected ? '#DDA0DD' : '#4A4A4A'}
               paddingX={1}
               marginBottom={0}
             >
-              <Text color={isSelected ? 'yellow' : 'white'} bold={isSelected}>
-                {isSelected ? '● ' : '○ '}
+              <Text color={isSelected ? '#E0B0FF' : '#B0B0B0'} bold={isSelected}>
+                {isSelected ? '✧ ' : '· '}
                 {item.label}
               </Text>
             </Box>

@@ -43,12 +43,12 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
 
   if (step === 'mode') {
     return (
-      <Box flexDirection="column" padding={1} borderStyle="round" borderColor="blue">
-        <Text bold color="blue">ZENTRIA CLI - SELECCIONE MODO</Text>
+      <Box flexDirection="column" padding={1} borderStyle="round" borderColor="#7B68EE">
+        <Text bold color="#E0B0FF">₊⊹ ࣪ ִֶָ☾. ZENTRIA CLI ✴︎ SELECCIONE MODO</Text>
         <Menu
           items={[
-            { label: '🌐 Modo Online (Requiere Autenticación)', value: 'online' },
-            { label: '📴 Modo Offline (Sin conexión a servidor)', value: 'offline' },
+            { label: '⋆ Modo Online (Requiere Autenticación)', value: 'online' },
+            { label: '☁︎ Modo Offline (Sin conexión a servidor)', value: 'offline' },
           ]}
           onSelect={handleModeSelect}
         />
@@ -57,8 +57,8 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
   }
 
   return (
-    <Box flexDirection="column" padding={1} borderStyle="round" borderColor="blue">
-      <Text bold color="blue">ZENTRIA CLI - ACCESO RESTRINGIDO</Text>
+    <Box flexDirection="column" padding={1} borderStyle="round" borderColor="#7B68EE">
+      <Text bold color="#E0B0FF">₊⊹ ࣪ ִֶָ☾. ZENTRIA CLI ✴︎ ACCESO RESTRINGIDO</Text>
       <Box marginTop={1}>
         <Text dimColor>API: {AuthService.getBaseUrl()}</Text>
       </Box>
@@ -92,7 +92,7 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
 
       <Box marginTop={1} flexDirection="column">
         {loading ? (
-          <Text color="yellow">Validando credenciales en el servidor...</Text>
+          <Text color="#DDA0DD">☕︎ Validando credenciales en el servidor...</Text>
         ) : (
           <Text dimColor>TAB para cambiar campo | ENTER para ingresar</Text>
         )}

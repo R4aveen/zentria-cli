@@ -19,5 +19,7 @@ export interface TechnicalItem {
     keyboard_layout: any;
     has_backlit_keyboard?: boolean;
     observations: any;
+    resolution?: any;
+    ports?: any;
   };
 }

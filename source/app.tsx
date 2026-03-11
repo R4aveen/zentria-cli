@@ -63,7 +63,7 @@ const Shell: React.FC<ShellProps> = ({ mode, onLogout }) => {
     if (key.escape) {
       if (view === 'menu') {
         exit();
-      } else {
+      } else if (view !== 'global-scanner') {
         setView('menu');
         setShowPrompt(false);
       }
@@ -83,26 +83,26 @@ const Shell: React.FC<ShellProps> = ({ mode, onLogout }) => {
 
   return (
     <Box flexDirection="column" minHeight={15} paddingX={1} paddingTop={1}>
-      <Box borderStyle="double" borderColor="cyan" paddingX={1} marginBottom={1} justifyContent="space-between">
+      <Box borderStyle="double" borderColor="#7B68EE" paddingX={1} marginBottom={1} justifyContent="space-between">
         <Box>
-          <Text bold color="cyan"> ZENTRIA CLI </Text>
-          <Text color="white" backgroundColor={mode === 'online' ? 'blue' : 'magenta'}>
+          <Text bold color="#E0B0FF"> ₊⊹ ࣪ ִֶָ☾. ZENTRIA CLI ✴︎ </Text>
+          <Text color="white" backgroundColor={mode === 'online' ? '#5B5EA6' : '#8B5CF6'}>
             {' '}{mode.toUpperCase()}{' '}
           </Text>
         </Box>
-        <Text dimColor>BR-{AuthService.getBranchId()} | {new Date().toLocaleTimeString()}</Text>
+        <Text color="#778899">☁︎ BR-{AuthService.getBranchId()} ⋆ {new Date().toLocaleTimeString()}</Text>
       </Box>
 
-      <Box flexGrow={1} borderStyle="round" borderColor={!showPrompt ? 'yellow' : 'gray'} paddingX={1}>
+      <Box flexGrow={1} borderStyle="round" borderColor={!showPrompt ? '#DDA0DD' : 'gray'} paddingX={1}>
         {view === 'menu' && <MainMenuView setView={setView} onLogout={onLogout} isActive={!showPrompt} />}
         {view === 'info' && (
           <Box flexDirection="column" padding={1}>
-            <Text bold color="yellow" underline>DIAGNÓSTICO DEL SISTEMA</Text>
+            <Text bold color="#E0B0FF" underline>𖦹 DIAGNÓSTICO DEL SISTEMA</Text>
             <Box marginTop={1} flexDirection="column">
-              <Text>• Modo: {mode.toUpperCase()}</Text>
-              <Text>• Sucursal Activa: BR-{AuthService.getBranchId()}</Text>
-              <Text>• API Base: {AuthService.getBaseUrl()}</Text>
-              <Text>• Token Presente: {AuthService.getToken() ? 'SÍ' : 'NO'}</Text>
+              <Text color="#B0C4DE">╰┈➤ Modo: {mode.toUpperCase()}</Text>
+              <Text color="#B0C4DE">╰┈➤ Sucursal Activa: BR-{AuthService.getBranchId()}</Text>
+              <Text color="#B0C4DE">╰┈➤ API Base: {AuthService.getBaseUrl()}</Text>
+              <Text color="#B0C4DE">╰┈➤ Token Presente: {AuthService.getToken() ? 'SÍ' : 'NO'}</Text>
             </Box>
             <Box marginTop={1} borderStyle="single" borderColor="gray" paddingX={1}>
               <Text dimColor>Ruta Ejemplo: /api/branches/{AuthService.getBranchId()}/technical-reviews/batches</Text>
@@ -116,21 +116,21 @@ const Shell: React.FC<ShellProps> = ({ mode, onLogout }) => {
           mode === 'online' ? <OnlineTicketModule isActive={!showPrompt} /> : <OfflineTicketModule />
         )}
         {view === 'global-scanner' && (
-          <GlobalScannerModule isActive={!showPrompt} />
+          <GlobalScannerModule isActive={!showPrompt} onExit={() => setView('menu')} />
         )}
       </Box>
 
       {showPrompt && (
-        <Box borderStyle="bold" borderColor="green" paddingX={1} marginTop={1}>
-          <Text color="green" bold>zentria-cli {'>'} </Text>
+        <Box borderStyle="bold" borderColor="#7B68EE" paddingX={1} marginTop={1}>
+          <Text color="#7B68EE" bold>₊˚ෆ zentria {'>'} </Text>
           <Text color="white">{command}</Text>
           <Text backgroundColor="white" color="white"> </Text>
         </Box>
       )}
 
       <Box marginTop={1} justifyContent="space-between">
-        <Text dimColor> ESC: Volver/Salir </Text>
-        <Text color="gray"> [ CTRL+X: CLI ] </Text>
+        <Text color="#696969"> ╰┈➤ ESC: Volver/Salir </Text>
+        <Text color="#696969"> 愛 CTRL+X: CLI </Text>
       </Box>
     </Box>
   );

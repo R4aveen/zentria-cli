@@ -10,10 +10,10 @@ interface MainMenuViewProps {
 
 export const MainMenuView: React.FC<MainMenuViewProps> = ({ setView, onLogout, isActive = true }) => {
   const items: MenuItem[] = [
-    { label: '📦 Listar Lotes (Por Lote)', value: 'scanner' },
-    { label: '🔍 Imprimir por Serie (Búsqueda Global)', value: 'global-scanner' },
-    { label: 'ℹ️ Información del Sistema', value: 'info' },
-    { label: '🚪 Cerrar Sesión', value: 'logout' },
+    { label: '✧ Listar Lotes (Por Lote)', value: 'scanner' },
+    { label: '⋆ Imprimir por Serie (Búsqueda Global)', value: 'global-scanner' },
+    { label: '𖦹 Información del Sistema', value: 'info' },
+    { label: '☾ Cerrar Sesión', value: 'logout' },
   ];
 
   const handleSelect = (item: MenuItem) => {
@@ -31,13 +31,13 @@ export const MainMenuView: React.FC<MainMenuViewProps> = ({ setView, onLogout, i
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold underline color={isActive ? 'yellow' : 'white'}>
-        {isActive ? '🏠 MENÚ PRINCIPAL' : '   MENÚ PRINCIPAL'}
+      <Text bold underline color={isActive ? '#E0B0FF' : 'white'}>
+        {isActive ? '₊˚ෆ MENÚ PRINCIPAL' : '   MENÚ PRINCIPAL'}
       </Text>
       <Menu items={items} onSelect={handleSelect} isActive={isActive} />
       {isActive && (
         <Box marginTop={1}>
-          <Text dimColor italic>↑ ↓: Navegar | ENTER: Seleccionar | ESC: Salir</Text>
+          <Text color="#696969" italic>╰┈➤ ↑↓ Navegar  ⋆ ENTER Seleccionar  ☾ ESC Salir</Text>
         </Box>
       )}
     </Box>
