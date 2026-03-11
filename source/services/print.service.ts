@@ -91,20 +91,40 @@ export class PrintService {
       <html>
       <head>
         <style>
-          @page { size: 80mm 60mm; margin: 0; }
-          body {
+          /* Forzar tamaño físico exacto sin márgenes */
+          @page { 
+            size: 80mm 60mm; 
+            margin: 0 !important; 
+          }
+          
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+          }
+
+          html, body {
             margin: 0;
-            padding: 8px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 11px;
+            padding: 0;
             width: 80mm;
             height: 60mm;
-            box-sizing: border-box;
-            overflow: hidden;
+            overflow: hidden; /* Evita que Puppeteer detecte una segunda página */
             background: white;
-            color: black;
-            line-height: 1.2;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.1;
           }
+
+          /* Contenedor principal con altura fija para evitar saltos */
+          .label-container {
+            width: 80mm;
+            height: 60mm;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            page-break-inside: avoid;
+          }
+
           .header {
             display: flex;
             justify-content: space-between;
@@ -112,46 +132,50 @@ export class PrintService {
             border-bottom: 2px solid black;
             padding-bottom: 4px;
             margin-bottom: 5px;
+            height: 45px; /* Altura fija */
           }
-          .client-info { flex: 1; }
-          .client-name { font-weight: bold; font-size: 13px; text-transform: uppercase; }
+          
+          .client-info { flex: 1; overflow: hidden; }
+          .client-name { font-weight: bold; font-size: 13px; text-transform: uppercase; white-space: nowrap; }
           .grade-container { text-align: center; margin-left: 10px; }
           .grade-label { font-size: 8px; font-weight: bold; }
-          .grade-value { font-size: 24px; font-weight: bold; line-height: 1; border: 2px solid black; padding: 2px 6px; min-width: 30px; display: inline-block; }
+          .grade-value { font-size: 24px; font-weight: bold; line-height: 1; border: 2.5px solid black; padding: 2px 6px; display: inline-block; }
           
-          .product-name { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #333; }
+          .product-name { font-size: 12px; font-weight: bold; margin-bottom: 4px; white-space: nowrap; overflow: hidden; }
           
-          .main-content { display: flex; justify-content: space-between; height: 100%; }
-          .specs { flex: 1; padding-right: 10px; }
-          .specs div { margin-bottom: 1px; }
+          .main-content { display: flex; flex: 1; overflow: hidden; }
+          .specs { flex: 1; padding-right: 5px; font-size: 10.5px; }
+          .specs div { margin-bottom: 0px; white-space: nowrap; }
           
-          .qr-side { width: 75px; display: flex; flexDirection: column; align-items: center; }
-          .qr-image { width: 75px; height: 75px; }
-          .serial-text { font-size: 9px; font-weight: bold; margin-top: 2px; font-family: 'Courier New', Courier, monospace; }
-          .logo-placeholder { font-size: 8px; font-weight: bold; color: #666; margin-bottom: 5px; }
+          .qr-side { width: 75px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+          .qr-image { width: 75px; height: 75px; object-fit: contain; }
+          .serial-text { font-size: 9px; font-weight: bold; margin-top: 1px; font-family: monospace; }
+          .logo-placeholder { font-size: 8px; font-weight: bold; color: #444; }
         </style>
       </head>
       <body>
-        <div class="header">
-          <div class="client-info">
-            <div class="logo-placeholder">ZENTRIA ERP</div>
-            <div class="client-name">${clientName}</div>
+        <div class="label-container">
+          <div class="header">
+            <div class="client-info">
+              <div class="logo-placeholder">ZENTRIA ERP</div>
+              <div class="client-name">${clientName}</div>
+            </div>
+            <div class="grade-container">
+              <div class="grade-label">GRADO</div>
+              <div class="grade-value">${grade}</div>
+            </div>
           </div>
-          <div class="grade-container">
-            <div class="grade-label">GRADO</div>
-            <div class="grade-value">${grade}</div>
-          </div>
-        </div>
-        
-        <div class="product-name">${productName}</div>
-        
-        <div class="main-content">
-          <div class="specs">
-            ${specsHtml}
-          </div>
-          <div class="qr-side">
-            <img class="qr-image" src="${qrDataUrl}" />
-            <div class="serial-text">${serialNumber}</div>
+          
+          <div class="product-name">${productName}</div>
+          
+          <div class="main-content">
+            <div class="specs">
+              ${specsHtml}
+            </div>
+            <div class="qr-side">
+              <img class="qr-image" src="${qrDataUrl}" />
+              <div class="serial-text">${serialNumber}</div>
+            </div>
           </div>
         </div>
       </body>

@@ -8,12 +8,24 @@ const config = new Conf({
   projectName: 'zentria-cli',
 });
 
+export type AppMode = 'online' | 'offline';
+
 export class AuthService {
   private static TOKEN_KEY = 'auth_token';
   private static BASE_URL_KEY = 'api_base_url';
+  private static MODE_KEY = 'app_mode';
+  private static BRANCH_ID_KEY = 'branch_id';
 
   static setToken(token: string) {
     config.set(this.TOKEN_KEY, token);
+  }
+
+  static setBranchId(id: number | string) {
+    config.set(this.BRANCH_ID_KEY, String(id));
+  }
+
+  static getBranchId(): string {
+    return (config.get(this.BRANCH_ID_KEY) as string) || '1';
   }
 
   static getToken(): string | undefined {
@@ -22,6 +34,19 @@ export class AuthService {
 
   static clearToken() {
     config.delete(this.TOKEN_KEY);
+  }
+
+  static setMode(mode: AppMode) {
+    config.set(this.MODE_KEY, mode);
+  }
+
+  static getMode(): AppMode {
+    return (config.get(this.MODE_KEY) as AppMode) || 'online';
+  }
+
+  static logout() {
+    this.clearToken();
+    config.delete(this.MODE_KEY);
   }
 
   static setBaseUrl(url: string) {

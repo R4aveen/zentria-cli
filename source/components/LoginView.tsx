@@ -3,12 +3,15 @@ import { Text, Box } from 'ink';
 import TextInput from 'ink-text-input';
 import { ApiService } from '../services/api.service.js';
 import { AuthService } from '../services/auth.service.js';
+import { Menu, MenuItem } from './common/Menu.js';
 
 interface Props {
   onLoginSuccess: (token: string) => void;
+  onOfflineMode: () => void;
 }
 
-export const LoginView: React.FC<Props> = ({ onLoginSuccess }) => {
+export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) => {
+  const [step, setStep] = useState<'mode' | 'credentials'>('mode');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [focus, setFocus] = useState<'email' | 'password'>('email');
@@ -29,6 +32,29 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess }) => {
       setLoading(false);
     }
   };
+
+  const handleModeSelect = (item: MenuItem) => {
+    if (item.value === 'online') {
+      setStep('credentials');
+    } else {
+      onOfflineMode();
+    }
+  };
+
+  if (step === 'mode') {
+    return (
+      <Box flexDirection="column" padding={1} borderStyle="round" borderColor="blue">
+        <Text bold color="blue">ZENTRIA CLI - SELECCIONE MODO</Text>
+        <Menu
+          items={[
+            { label: '🌐 Modo Online (Requiere Autenticación)', value: 'online' },
+            { label: '📴 Modo Offline (Sin conexión a servidor)', value: 'offline' },
+          ]}
+          onSelect={handleModeSelect}
+        />
+      </Box>
+    );
+  }
 
   return (
     <Box flexDirection="column" padding={1} borderStyle="round" borderColor="blue">
@@ -77,6 +103,9 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess }) => {
             <Text color="red" wrap="truncate">{error}</Text>
           </Box>
         )}
+        <Box marginTop={1}>
+          <Text dimColor>Presione ESC para volver a selección de modo</Text>
+        </Box>
       </Box>
     </Box>
   );
