@@ -181,4 +181,72 @@ console.log('\n✧ Aplicando icono y metadatos...');
   console.log('  ✓ Icono y metadatos aplicados');
 }
 
+// 7. Firmar ejecutable con certificado autofirmado
+console.log('\n✧ Firmando ejecutable...');
+const CER_PATH = join(BUILD_DIR, 'ZentriaCertificado.cer');
+const INSTALLER_PATH = join(BUILD_DIR, 'instalar-certificado.bat');
+
+try {
+  // Crear certificado si no existe, firmar el .exe y exportar el .cer
+  const signScriptPath = join(BUILD_DIR, '_sign.ps1');
+  const signScript = [
+    `$certName = 'ZentriaCLI'`,
+    `$cert = Get-ChildItem -Path Cert:\\CurrentUser\\My -CodeSigningCert | Where-Object { $_.Subject -eq "CN=$certName" } | Select-Object -First 1`,
+    `if (-not $cert) {`,
+    `  Write-Host '  Creando certificado autofirmado...'`,
+    `  $cert = New-SelfSignedCertificate -Subject "CN=$certName" -Type CodeSigningCert -CertStoreLocation Cert:\\CurrentUser\\My -NotAfter (Get-Date).AddYears(5)`,
+    `}`,
+    `Set-AuthenticodeSignature -FilePath '${EXE}' -Certificate $cert | Out-Null`,
+    `Export-Certificate -Cert $cert -FilePath '${CER_PATH}' | Out-Null`,
+    `$sig = Get-AuthenticodeSignature -FilePath '${EXE}'`,
+    `Write-Host "  Status: $($sig.Status)"`,
+  ].join('\n');
+  writeFileSync(signScriptPath, signScript, 'utf-8');
+  execSync(`powershell -NoProfile -ExecutionPolicy Bypass -File "${signScriptPath}"`, { stdio: 'inherit' });
+  // Limpiar script temporal
+  try { unlinkSync(signScriptPath); } catch {}
+  console.log('  ✓ Ejecutable firmado y certificado exportado');
+} catch (err) {
+  console.warn('  ⚠ No se pudo firmar el ejecutable:', err.message);
+  console.warn('    El .exe funcionará pero puede activar alertas de antivirus.');
+}
+
+// 8. Generar script instalador de certificado para distribución
+console.log('\n✧ Generando instalador de certificado...');
+const installerContent = `@echo off
+chcp 65001 >nul 2>&1
+color 0A
+echo.
+echo ===================================================
+echo   INSTALADOR DE SEGURIDAD - ZENTRIA CLI
+echo ===================================================
+echo.
+echo Instalando certificado de seguridad para evitar
+echo bloqueos del antivirus...
+echo.
+certutil -addstore -f "Root" "%~dp0ZentriaCertificado.cer"
+if %errorlevel% neq 0 (
+  color 0C
+  echo.
+  echo [ERROR] No se pudo instalar el certificado.
+  echo Asegurate de ejecutar este archivo como Administrador.
+  echo Clic derecho ^> "Ejecutar como administrador"
+  echo.
+  pause
+  exit /b 1
+)
+echo.
+echo ===================================================
+echo  LISTO. Ya puedes abrir zentria-cli.exe sin problemas.
+echo ===================================================
+echo.
+pause
+`;
+writeFileSync(INSTALLER_PATH, installerContent, 'utf-8');
+console.log('  ✓ Instalador generado → build/instalar-certificado.bat');
+
 console.log(`\n✴︎ ¡Ejecutable generado exitosamente! → ${EXE}`);
+console.log('  Distribuir carpeta build/ con:');
+console.log('    - zentria-cli.exe');
+console.log('    - ZentriaCertificado.cer');
+console.log('    - instalar-certificado.bat');
