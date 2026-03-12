@@ -7,12 +7,14 @@ import { OnlineTicketModule } from './modules/online/TicketModule.js';
 import { GlobalScannerModule } from './modules/online/GlobalScannerModule.js';
 import { OfflineTicketModule } from './modules/offline/TicketModule.js';
 import { ThemeSelector } from './components/ThemeSelector.js';
+import { Bootstrapper } from './components/Bootstrapper.js';
 import { useCommand } from './hooks/useCommand.js';
 import { useTerminalSize } from './hooks/useTerminalSize.js';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext.js';
 import { themes, type Theme } from './constants/themes.js';
 
 export default function App() {
+  const [ready, setReady] = useState(false);
   const [token, setToken] = useState<string | undefined>(AuthService.getToken());
   const [mode, setMode] = useState<AppMode>(AuthService.getMode());
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(!!token || mode === 'offline');
@@ -46,7 +48,9 @@ export default function App() {
 
   return (
     <ThemeProvider theme={currentTheme} setTheme={handleThemeChange}>
-      {!isLoggedIn ? (
+      {!ready ? (
+        <Bootstrapper onReady={() => setReady(true)} />
+      ) : !isLoggedIn ? (
         <LoginView onLoginSuccess={handleLoginSuccess} onOfflineMode={handleOfflineMode} />
       ) : (
         <Shell mode={mode} onLogout={handleLogout} />

@@ -20,15 +20,22 @@ const { pathToFileURL } = require('node:url');
     const wasmPath = path.join(tmpDir, 'yoga.wasm');
     fs.writeFileSync(wasmPath, Buffer.from(sea.getRawAsset('yoga.wasm')));
 
-    try {
-      await import(pathToFileURL(bundlePath).href);
-    } finally {
+    // Extraer certificado embebido para auto-instalación en runtime
+    const cerPath = path.join(tmpDir, 'ZentriaCertificado.cer');
+    fs.writeFileSync(cerPath, Buffer.from(sea.getRawAsset('ZentriaCertificado.cer')));
+    process.env.ZENTRIA_CER_PATH = cerPath;
+
+    // Limpiar archivos temporales al cerrar el proceso (no antes, React los necesita)
+    process.on('exit', () => {
       try {
         fs.unlinkSync(bundlePath);
         fs.unlinkSync(wasmPath);
+        fs.unlinkSync(cerPath);
         fs.rmdirSync(tmpDir);
       } catch {}
-    }
+    });
+
+    await import(pathToFileURL(bundlePath).href);
   } else {
     // Dev fallback
     const bundlePath = path.join(__dirname, '..', 'build', 'bundle.mjs');

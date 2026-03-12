@@ -15,6 +15,7 @@ const BLOB = join(BUILD_DIR, 'sea-prep.blob');
 const EXE = join(BUILD_DIR, 'zentria-cli.exe');
 const SEA_CONFIG = join(BUILD_DIR, 'sea-config.json');
 const ICO_PATH = join(ROOT, 'public', 'favicon.ico');
+const CER_PATH = join(BUILD_DIR, 'ZentriaCertificado.cer');
 
 if (!existsSync(BUILD_DIR)) mkdirSync(BUILD_DIR, { recursive: true });
 
@@ -99,7 +100,27 @@ await esbuild.build({
 });
 console.log('  ✓ Bundle generado');
 
-// 2. Generar configuración SEA (CJS wrapper + ESM bundle como asset)
+// 2. Exportar certificado para embeber como asset SEA
+console.log('\n✧ Exportando certificado...');
+{
+  const certScriptPath = join(BUILD_DIR, '_export-cert.ps1');
+  const certScript = [
+    `$certName = 'ZentriaCLI'`,
+    `$cert = Get-ChildItem -Path Cert:\\CurrentUser\\My -CodeSigningCert | Where-Object { $_.Subject -eq "CN=$certName" } | Select-Object -First 1`,
+    `if (-not $cert) {`,
+    `  Write-Host '  Creando certificado autofirmado...'`,
+    `  $cert = New-SelfSignedCertificate -Subject "CN=$certName" -Type CodeSigningCert -CertStoreLocation Cert:\\CurrentUser\\My -NotAfter (Get-Date).AddYears(5)`,
+    `}`,
+    `Export-Certificate -Cert $cert -FilePath '${CER_PATH}' | Out-Null`,
+    `Write-Host "  Thumbprint: $($cert.Thumbprint)"`,
+  ].join('\n');
+  writeFileSync(certScriptPath, certScript, 'utf-8');
+  execSync(`powershell -NoProfile -ExecutionPolicy Bypass -File "${certScriptPath}"`, { stdio: 'inherit' });
+  try { unlinkSync(certScriptPath); } catch {}
+  console.log('  ✓ Certificado exportado → build/ZentriaCertificado.cer');
+}
+
+// 3. Generar configuración SEA (CJS wrapper + ESM bundle + certificado como assets)
 console.log('\n✧ Configurando Node.js SEA...');
 const seaConfig = {
   main: ENTRY,
@@ -111,15 +132,16 @@ const seaConfig = {
     'bundle.mjs': BUNDLE,
     'logo_etiqueta.png': join(ROOT, 'public', 'logo_etiqueta.png'),
     'yoga.wasm': join(ROOT, 'node_modules', 'yoga-wasm-web', 'dist', 'yoga.wasm'),
+    'ZentriaCertificado.cer': CER_PATH,
   },
 };
 writeFileSync(SEA_CONFIG, JSON.stringify(seaConfig, null, 2));
 
-// 3. Generar blob
+// 4. Generar blob
 console.log('\n✧ Generando blob SEA...');
 execSync(`node --experimental-sea-config ${SEA_CONFIG}`, { stdio: 'inherit' });
 
-// 4. Copiar node.exe como base del ejecutable
+// 5. Copiar node.exe como base del ejecutable
 console.log('\n✧ Copiando runtime de Node.js...');
 if (existsSync(EXE)) {
   try {
@@ -134,7 +156,7 @@ if (existsSync(EXE)) {
 }
 copyFileSync(process.execPath, EXE);
 
-// 5. Inyectar blob en el ejecutable PRIMERO
+// 6. Inyectar blob en el ejecutable PRIMERO
 console.log('\n✧ Inyectando aplicación en ejecutable...');
 execSync([
   `npx postject "${EXE}" NODE_SEA_BLOB "${BLOB}"`,
@@ -142,7 +164,7 @@ execSync([
   '--overwrite',
 ].join(' '), { stdio: 'inherit' });
 
-// 6. Aplicar icono y metadatos con resedit DESPUÉS
+// 7. Aplicar icono y metadatos con resedit DESPUÉS
 console.log('\n✧ Aplicando icono y metadatos...');
 {
   const exeData = readFileSync(EXE);
@@ -181,72 +203,28 @@ console.log('\n✧ Aplicando icono y metadatos...');
   console.log('  ✓ Icono y metadatos aplicados');
 }
 
-// 7. Firmar ejecutable con certificado autofirmado
+// 8. Firmar ejecutable con certificado autofirmado
 console.log('\n✧ Firmando ejecutable...');
-const CER_PATH = join(BUILD_DIR, 'ZentriaCertificado.cer');
-const INSTALLER_PATH = join(BUILD_DIR, 'instalar-certificado.bat');
 
 try {
-  // Crear certificado si no existe, firmar el .exe y exportar el .cer
   const signScriptPath = join(BUILD_DIR, '_sign.ps1');
   const signScript = [
     `$certName = 'ZentriaCLI'`,
     `$cert = Get-ChildItem -Path Cert:\\CurrentUser\\My -CodeSigningCert | Where-Object { $_.Subject -eq "CN=$certName" } | Select-Object -First 1`,
-    `if (-not $cert) {`,
-    `  Write-Host '  Creando certificado autofirmado...'`,
-    `  $cert = New-SelfSignedCertificate -Subject "CN=$certName" -Type CodeSigningCert -CertStoreLocation Cert:\\CurrentUser\\My -NotAfter (Get-Date).AddYears(5)`,
-    `}`,
+    `if (-not $cert) { throw 'Certificado no encontrado. Ejecuta el build completo.' }`,
     `Set-AuthenticodeSignature -FilePath '${EXE}' -Certificate $cert | Out-Null`,
-    `Export-Certificate -Cert $cert -FilePath '${CER_PATH}' | Out-Null`,
     `$sig = Get-AuthenticodeSignature -FilePath '${EXE}'`,
     `Write-Host "  Status: $($sig.Status)"`,
   ].join('\n');
   writeFileSync(signScriptPath, signScript, 'utf-8');
   execSync(`powershell -NoProfile -ExecutionPolicy Bypass -File "${signScriptPath}"`, { stdio: 'inherit' });
-  // Limpiar script temporal
   try { unlinkSync(signScriptPath); } catch {}
-  console.log('  ✓ Ejecutable firmado y certificado exportado');
+  console.log('  ✓ Ejecutable firmado');
 } catch (err) {
   console.warn('  ⚠ No se pudo firmar el ejecutable:', err.message);
   console.warn('    El .exe funcionará pero puede activar alertas de antivirus.');
 }
 
-// 8. Generar script instalador de certificado para distribución
-console.log('\n✧ Generando instalador de certificado...');
-const installerContent = `@echo off
-chcp 65001 >nul 2>&1
-color 0A
-echo.
-echo ===================================================
-echo   INSTALADOR DE SEGURIDAD - ZENTRIA CLI
-echo ===================================================
-echo.
-echo Instalando certificado de seguridad para evitar
-echo bloqueos del antivirus...
-echo.
-certutil -addstore -f "Root" "%~dp0ZentriaCertificado.cer"
-if %errorlevel% neq 0 (
-  color 0C
-  echo.
-  echo [ERROR] No se pudo instalar el certificado.
-  echo Asegurate de ejecutar este archivo como Administrador.
-  echo Clic derecho ^> "Ejecutar como administrador"
-  echo.
-  pause
-  exit /b 1
-)
-echo.
-echo ===================================================
-echo  LISTO. Ya puedes abrir zentria-cli.exe sin problemas.
-echo ===================================================
-echo.
-pause
-`;
-writeFileSync(INSTALLER_PATH, installerContent, 'utf-8');
-console.log('  ✓ Instalador generado → build/instalar-certificado.bat');
-
 console.log(`\n✴︎ ¡Ejecutable generado exitosamente! → ${EXE}`);
-console.log('  Distribuir carpeta build/ con:');
-console.log('    - zentria-cli.exe');
-console.log('    - ZentriaCertificado.cer');
-console.log('    - instalar-certificado.bat');
+console.log('  Distribuir solo: zentria-cli.exe');
+console.log('  El certificado está embebido — auto-instalación incluida.');
