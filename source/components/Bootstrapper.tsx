@@ -35,7 +35,16 @@ export const Bootstrapper: React.FC<BootstrapperProps> = ({ onReady }) => {
         return;
       }
 
-      // Check if cert is already trusted
+      // Skip if setup was already completed previously
+      if (CertificateService.isSetupDone()) {
+        if (!cancelled) {
+          setStatus('installed');
+          onReady();
+        }
+        return;
+      }
+
+      // Check if cert is already trusted (first run or launcher already did it)
       const found = await CertificateService.check();
       if (cancelled) return;
 

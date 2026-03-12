@@ -3,8 +3,12 @@ import { existsSync } from 'node:fs';
 import { writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import Conf from 'conf';
 
 export type CertStatus = 'checking' | 'installed' | 'installing' | 'success' | 'error' | 'skipped';
+
+const config = new Conf({ projectName: 'zentria-cli' });
+const SETUP_DONE_KEY = 'security_setup_done';
 
 export class CertificateService {
   private static CERT_NAME = 'ZentriaCLI';
@@ -12,6 +16,16 @@ export class CertificateService {
   /** Returns true if running as a SEA executable (has embedded cert) */
   static isSeaBuild(): boolean {
     return !!process.env['ZENTRIA_CER_PATH'];
+  }
+
+  /** Returns true if setup was already completed (local flag) */
+  static isSetupDone(): boolean {
+    return config.get(SETUP_DONE_KEY) === true;
+  }
+
+  /** Mark setup as completed so we never check again */
+  private static markSetupDone(): void {
+    config.set(SETUP_DONE_KEY, true);
   }
 
   /** Check if certificate is trusted AND Defender exclusion exists */
@@ -29,7 +43,9 @@ export class CertificateService {
           resolve(false);
           return;
         }
-        resolve(stdout.trim().includes('OK'));
+        const ok = stdout.trim().includes('OK');
+        if (ok) this.markSetupDone();
+        resolve(ok);
       });
     });
   }
@@ -71,6 +87,7 @@ export class CertificateService {
           return;
         }
         if (stdout.trim().includes('OK')) {
+          this.markSetupDone();
           resolve({ ok: true, message: 'Configuración de seguridad completada.' });
         } else {
           resolve({ ok: false, message: 'Error en la configuración. Ejecuta como administrador.' });
