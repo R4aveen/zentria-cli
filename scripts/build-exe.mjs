@@ -17,6 +17,9 @@ const SEA_CONFIG = join(BUILD_DIR, 'sea-config.json');
 const ICO_PATH = join(ROOT, 'public', 'favicon.ico');
 const CER_PATH = join(BUILD_DIR, 'ZentriaCertificado.cer');
 
+const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
+const VERSION = pkg.version;
+
 if (!existsSync(BUILD_DIR)) mkdirSync(BUILD_DIR, { recursive: true });
 
 // Leer variables de .env.production para inyectarlas en build-time
@@ -182,8 +185,9 @@ console.log('\n✧ Aplicando icono y metadatos...');
   // Metadatos de versión
   const viEntries = ResEdit.Resource.VersionInfo.fromEntries(res.entries);
   const vi = viEntries[0] || ResEdit.Resource.VersionInfo.createEmpty();
-  vi.setFileVersion(1, 0, 0, 0);
-  vi.setProductVersion(1, 0, 0, 0);
+  const vParts = VERSION.split('.').map(Number);
+  vi.setFileVersion(vParts[0] || 0, vParts[1] || 0, vParts[2] || 0, 0);
+  vi.setProductVersion(vParts[0] || 0, vParts[1] || 0, vParts[2] || 0, 0);
   vi.setStringValues({
     lang: 1033,
     codepage: 1200,
@@ -193,8 +197,8 @@ console.log('\n✧ Aplicando icono y metadatos...');
     CompanyName: 'Zentria',
     LegalCopyright: 'Zentria © 2026',
     OriginalFilename: 'zentria-cli.exe',
-    FileVersion: '1.0.0',
-    ProductVersion: '1.0.0',
+    FileVersion: VERSION,
+    ProductVersion: VERSION,
   });
   vi.outputToResourceEntries(res.entries);
 
@@ -230,7 +234,7 @@ console.log(`\n✴︎ Ejecutable generado → ${EXE}`);
 // 9. Generar paquete de distribución (ZIP con .bat lanzador)
 // SmartScreen NO bloquea archivos .bat ni .zip — solo .exe desconocidos
 console.log('\n✧ Generando paquete de distribución...');
-const DIST_ZIP = join(BUILD_DIR, 'Zentria-CLI.zip');
+const DIST_ZIP = join(BUILD_DIR, `Zentria-CLI-v${VERSION}.zip`);
 const INICIAR_BAT = join(BUILD_DIR, 'Iniciar Zentria.bat');
 
 // 9a. Crear "Iniciar Zentria.bat" — instala cert + exclusión Defender + lanza el CLI
@@ -245,6 +249,9 @@ const iniciarContent = [
   'echo  ===================================================',
   'echo.',
   '',
+  ':: Desbloquear archivos (quitar marca de internet/SmartScreen)',
+  'powershell -NoProfile -Command "Get-ChildItem -Path \'%~dp0\' | Unblock-File" >nul 2>&1',
+  '',
   ':: Verificar si ya se configuro antes',
   'reg query "HKCU\\Software\\ZentriaCLI" /v SetupDone >nul 2>&1',
   'if %errorlevel% equ 0 goto :launch',
@@ -252,11 +259,18 @@ const iniciarContent = [
   'echo  Configurando seguridad (solo la primera vez)...',
   'echo.',
   '',
-  ':: Instalar certificado en Entidades Raiz de Confianza (pide UAC)',
-  'powershell -NoProfile -Command "Start-Process certutil -ArgumentList \'-addstore\',\'-f\',\'Root\',\'%~dp0ZentriaCertificado.cer\' -Verb RunAs -Wait -WindowStyle Hidden" 2>nul',
+  ':: Crear script temporal de configuracion elevada',
+  'set "SETUP_PS1=%TEMP%\\zentria-setup.ps1"',
+  'echo # Instalar certificado en Entidades Raiz de Confianza > "%SETUP_PS1%"',
+  'echo certutil -addstore -f "Root" "%~dp0ZentriaCertificado.cer" >> "%SETUP_PS1%"',
+  'echo # Agregar exclusion de Defender para la carpeta completa >> "%SETUP_PS1%"',
+  'echo Add-MpPreference -ExclusionPath "%~dp0" >> "%SETUP_PS1%"',
+  'echo # Agregar exclusion por proceso >> "%SETUP_PS1%"',
+  'echo Add-MpPreference -ExclusionProcess "zentria-cli.exe" >> "%SETUP_PS1%"',
   '',
-  ':: Agregar exclusion de Windows Defender',
-  'powershell -NoProfile -Command "Start-Process powershell -ArgumentList \'-NoProfile\',\'-Command\',\'Add-MpPreference -ExclusionPath \\\\\\"\'%~dp0zentria-cli.exe\'\\\\\\";\' -Verb RunAs -Wait -WindowStyle Hidden" 2>nul',
+  ':: Ejecutar con privilegios de administrador (UAC)',
+  'powershell -NoProfile -Command "Start-Process powershell -ArgumentList \'-NoProfile\',\'-ExecutionPolicy\',\'Bypass\',\'-File\',\'%SETUP_PS1%\' -Verb RunAs -Wait -WindowStyle Hidden" 2>nul',
+  'del "%SETUP_PS1%" >nul 2>&1',
   '',
   ':: Marcar como configurado',
   'reg add "HKCU\\Software\\ZentriaCLI" /v SetupDone /t REG_SZ /d 1 /f >nul 2>&1',
