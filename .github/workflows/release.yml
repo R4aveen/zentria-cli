@@ -1,0 +1,33 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Crear certificado y compilar
+        run: node scripts/build-exe.mjs
+
+      - name: Subir Zentria-Setup.exe como Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/Zentria-Setup.exe
+          name: Zentria CLI ${{ github.ref_name }}
+          body: |
+            ## Instrucciones
+            1. Descarga **Zentria-Setup.exe**
+            2. Doble clic → acepta los permisos de administrador
+            3. ¡Listo! Zentria CLI se abrirá automáticamente

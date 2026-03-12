@@ -227,98 +227,66 @@ try {
 
 console.log(`\n✴︎ Ejecutable generado → ${EXE}`);
 
-// 9. Generar instalador autoextraíble con IExpress (anti-SmartScreen)
-console.log('\n✧ Generando instalador Zentria-Setup.exe...');
-const SETUP_EXE = join(BUILD_DIR, 'Zentria-Setup.exe');
-const LAUNCHER_BAT = join(BUILD_DIR, 'launcher.bat');
-const SED_FILE = join(BUILD_DIR, 'zentria-setup.SED');
+// 9. Generar paquete de distribución (ZIP con .bat lanzador)
+// SmartScreen NO bloquea archivos .bat ni .zip — solo .exe desconocidos
+console.log('\n✧ Generando paquete de distribución...');
+const DIST_ZIP = join(BUILD_DIR, 'Zentria-CLI.zip');
+const INICIAR_BAT = join(BUILD_DIR, 'Iniciar Zentria.bat');
 
-// 9a. Crear launcher.bat — instala cert + exclusión Defender + lanza el CLI
-const launcherContent = [
+// 9a. Crear "Iniciar Zentria.bat" — instala cert + exclusión Defender + lanza el CLI
+const iniciarContent = [
   '@echo off',
   'chcp 65001 >nul 2>&1',
+  'title Zentria CLI',
+  'color 0A',
+  'echo.',
+  'echo  ===================================================',
+  'echo    ZENTRIA CLI - Iniciando...',
+  'echo  ===================================================',
+  'echo.',
   '',
-  ':: Instalar certificado en Entidades Raiz de Confianza',
-  'certutil -addstore -f "Root" "%~dp0ZentriaCertificado.cer" >nul 2>&1',
+  ':: Verificar si ya se configuro antes',
+  'reg query "HKCU\\Software\\ZentriaCLI" /v SetupDone >nul 2>&1',
+  'if %errorlevel% equ 0 goto :launch',
   '',
-  ':: Agregar exclusion de Windows Defender para el ejecutable',
-  'powershell -NoProfile -Command "Add-MpPreference -ExclusionPath \'%~dp0zentria-cli.exe\'" >nul 2>&1',
+  'echo  Configurando seguridad (solo la primera vez)...',
+  'echo.',
   '',
-  ':: Lanzar Zentria CLI',
+  ':: Instalar certificado en Entidades Raiz de Confianza (pide UAC)',
+  'powershell -NoProfile -Command "Start-Process certutil -ArgumentList \'-addstore\',\'-f\',\'Root\',\'%~dp0ZentriaCertificado.cer\' -Verb RunAs -Wait -WindowStyle Hidden" 2>nul',
+  '',
+  ':: Agregar exclusion de Windows Defender',
+  'powershell -NoProfile -Command "Start-Process powershell -ArgumentList \'-NoProfile\',\'-Command\',\'Add-MpPreference -ExclusionPath \\\\\\"\'%~dp0zentria-cli.exe\'\\\\\\";\' -Verb RunAs -Wait -WindowStyle Hidden" 2>nul',
+  '',
+  ':: Marcar como configurado',
+  'reg add "HKCU\\Software\\ZentriaCLI" /v SetupDone /t REG_SZ /d 1 /f >nul 2>&1',
+  '',
+  'echo  Listo! Abriendo Zentria CLI...',
+  'echo.',
+  '',
+  ':launch',
   'start "" "%~dp0zentria-cli.exe"',
+  'exit',
 ].join('\r\n');
-writeFileSync(LAUNCHER_BAT, launcherContent, 'utf-8');
-console.log('  ✓ launcher.bat generado');
+writeFileSync(INICIAR_BAT, iniciarContent, 'utf-8');
+console.log('  ✓ "Iniciar Zentria.bat" generado');
 
-// 9b. Crear archivo .SED para IExpress
-const sedContent = `[Version]
-Class=IEXPRESS
-SEDVersion=3
-[Options]
-PackagePurpose=InstallApp
-ShowInstallProgramWindow=0
-HideExtractAnimation=1
-UseLongFileName=1
-InsideCompressed=0
-CAB_FixedSize=0
-CAB_ResvCodeSigning=0
-RebootMode=N
-InstallPrompt=
-DisplayLicense=
-FinishMessage=
-TargetName=${SETUP_EXE}
-FriendlyName=Zentria CLI
-AppLaunched=launcher.bat
-PostInstallCmd=<None>
-AdminQuietInstCmd=
-UserQuietInstCmd=
-SourceFiles=SourceFiles
-[Strings]
-FILE0="zentria-cli.exe"
-FILE1="ZentriaCertificado.cer"
-FILE2="launcher.bat"
-[SourceFiles]
-SourceFiles0=${BUILD_DIR}\\
-[SourceFiles0]
-%FILE0%=
-%FILE1%=
-%FILE2%=
-`;
-writeFileSync(SED_FILE, sedContent, 'latin1');
-console.log('  ✓ Archivo .SED generado');
-
-// 9c. Compilar con IExpress (copiar SED a ruta corta para evitar bug de IExpress con rutas largas)
+// 9b. Generar ZIP con los 3 archivos necesarios
 try {
-  const shortDir = join(process.env.TEMP || 'C:\\temp', 'zentria-iexpress');
-  mkdirSync(shortDir, { recursive: true });
-  const shortSED = join(shortDir, 'setup.SED');
-  // Reescribir SED apuntando a la ruta corta temporal
-  const shortSetup = join(shortDir, 'Zentria-Setup.exe');
-  const sedForShort = sedContent
-    .replace(`TargetName=${SETUP_EXE}`, `TargetName=${shortSetup}`)
-    .replace(`SourceFiles0=${BUILD_DIR}\\`, `SourceFiles0=${BUILD_DIR}\\`);
-  writeFileSync(shortSED, sedForShort, 'latin1');
-  execSync(`cmd /c "iexpress /N ${shortSED}"`, { stdio: 'inherit' });
-  // Mover resultado al directorio de build
-  if (existsSync(shortSetup)) {
-    copyFileSync(shortSetup, SETUP_EXE);
-    unlinkSync(shortSetup);
-  }
-  // Limpiar temp
-  try { unlinkSync(shortSED); } catch {}
-  try { require('node:fs').rmdirSync(shortDir); } catch {}
-  console.log(`  ✓ Instalador generado → ${SETUP_EXE}`);
+  if (existsSync(DIST_ZIP)) unlinkSync(DIST_ZIP);
+  const zipCmd = [
+    `Compress-Archive -Path`,
+    `'${EXE}',`,
+    `'${CER_PATH}',`,
+    `'${INICIAR_BAT}'`,
+    `-DestinationPath '${DIST_ZIP}' -Force`,
+  ].join(' ');
+  execSync(`powershell -NoProfile -Command "${zipCmd}"`, { stdio: 'inherit' });
+  console.log(`  ✓ ZIP generado → ${DIST_ZIP}`);
 } catch (err) {
-  console.warn('  ⚠ Error generando instalador IExpress:', err.message);
-  console.warn('    Puedes distribuir zentria-cli.exe manualmente.');
-}
-
-// Limpiar archivos intermedios del instalador (solo si se generó el setup)
-if (existsSync(SETUP_EXE)) {
-  try { unlinkSync(LAUNCHER_BAT); } catch {}
-  try { unlinkSync(SED_FILE); } catch {}
+  console.warn('  ⚠ Error generando ZIP:', err.message);
 }
 
 console.log(`\n✴︎ ¡Build completo!`);
-console.log('  Distribuir: Zentria-Setup.exe (un solo archivo)');
-console.log('  El usuario hace doble clic → instala cert + exclusión → abre Zentria CLI');
+console.log('  Distribuir: build/Zentria-CLI.zip');
+console.log('  El usuario descomprime, doble clic en "Iniciar Zentria.bat" y listo.');
