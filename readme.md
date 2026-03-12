@@ -165,3 +165,15 @@ Selecciona un tema desde el menú principal → Configuración → Tema. La pref
 ```
 
 * este nos asegura que corra en cualquier equipo junto con las dependencias de iconos y otras configuraciones actualizadas en la v1.0.0
+
+---
+
+## Historial de versiones
+
+| Versión | Fecha | Highlights |
+|---------|-------|------------|
+| [**v1.1.6**](./releases/v1.1.6.md) | 12 mar 2026 | Firma digital, certificado embebido en SEA, bypass SmartScreen vía ZIP+.bat, versionado automático del ZIP, GitHub Actions CI/CD |
+| [**v1.0.0**](./releases/v1.0.0.md) | 11 mar 2026 | Ejecutable portable .exe (Node.js SEA + esbuild), 8 temas visuales, inyección de variables de entorno, icono y metadatos con resedit |
+| [**v0.0.1**](./releases/v0.0.1.md) | 10 mar 2026 | Versión base: autenticación, modos online/offline, módulos de escaneo, impresión de etiquetas |
+
+→ Ver [notas de versión detalladas](./releases/README.md) en la carpeta `releases/`.
