@@ -63,7 +63,7 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
         <Menu
           items={[
             { label: '⋆ Modo Online (Requiere Autenticación)', value: 'online' },
-            { label: '☁︎ Modo Offline (Sin conexión a servidor)', value: 'offline' },
+            // { label: '☁︎ Modo Offline (Sin conexión a servidor)', value: 'offline' },
           ]}
           onSelect={handleModeSelect}
         />

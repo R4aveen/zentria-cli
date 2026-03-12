@@ -148,3 +148,20 @@ Selecciona un tema desde el menú principal → Configuración → Tema. La pref
 - **Config**: Conf (almacenamiento persistente)
 - **Bundler**: esbuild
 - **Ejecutable**: Node.js SEA + postject
+
+
+## Buildear el proyecto 
+
+### Para poder Buildear correctamente el proyecto debemos hacer lo siguiente:
+
+- Matar cualquier proceso .exe anterior de *zentria-cli* esto asegura un buen buildeo sin fallos
+
+* el comando para poder buildear el proyecto es:
+
+```bash
+
+    node scripts/build-exe.mjs
+
+```
+
+* este nos asegura que corra en cualquier equipo junto con las dependencias de iconos y otras configuraciones actualizadas en la v1.0.0

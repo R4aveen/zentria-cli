@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, renameSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import esbuild from 'esbuild';
@@ -121,6 +121,17 @@ execSync(`node --experimental-sea-config ${SEA_CONFIG}`, { stdio: 'inherit' });
 
 // 4. Copiar node.exe como base del ejecutable
 console.log('\n✧ Copiando runtime de Node.js...');
+if (existsSync(EXE)) {
+  try {
+    unlinkSync(EXE);
+  } catch {
+    // Si no se puede eliminar, renombrar para desbloquearlo
+    const old = EXE + '.old';
+    try { unlinkSync(old); } catch {}
+    renameSync(EXE, old);
+    console.log('  ⚠ Ejecutable anterior estaba bloqueado, renombrado a .old');
+  }
+}
 copyFileSync(process.execPath, EXE);
 
 // 5. Inyectar blob en el ejecutable PRIMERO
