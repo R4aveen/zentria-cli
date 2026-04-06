@@ -236,7 +236,7 @@ export const OfflineTicketModule: React.FC = () => {
 					<Kbd type="primary">OFFLINE</Kbd>
 					<Text color={theme.text} bold wrap="truncate-end">  ZENTRIA TICKET SYSTEM  </Text>
 				</Box>
-				{columns > 80 && <Text color={theme.text} bold dimColor={true}>v4.0.1-PREMIUM</Text>}
+				{columns > 80 && <Text color={theme.text} bold dimColor={true}>v1.2.0 (ESTABLE)</Text>}
 			</Box>
 
 			<StepLine currentStep={step} columns={columns} />
