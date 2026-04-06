@@ -5,9 +5,14 @@ import { TechnicalItem } from '../types/api.types.js';
 const api = axios.create();
 
 api.interceptors.request.use((config) => {
-  const token = AuthService.getToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  // Don't send a stored token on the login endpoint — it may be stale
+  // and cause the API to reject the request with 401.
+  const isLoginRequest = config.url?.includes('/api/login');
+  if (!isLoginRequest) {
+    const token = AuthService.getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   config.baseURL = AuthService.getBaseUrl();
   return config;
@@ -16,7 +21,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    // Don't intercept 401 for login — let it reach the login handler
+    // so the real server message (e.g. "Invalid credentials") is shown.
+    const isLoginRequest = error.config?.url?.includes('/api/login');
+    if (error.response && error.response.status === 401 && !isLoginRequest) {
       AuthService.logout();
       throw new Error('Sesión expirada o inválida. Por favor, cierre el sistema y vuelva a ingresar.');
     }
@@ -27,7 +35,11 @@ api.interceptors.response.use(
 export class ApiService {
   static async login(email: string, password: Buffer | string) {
     try {
-      const response = await api.post('/api/login', { email, password });
+      // Ensure no stale token contaminates the login request
+      AuthService.clearToken();
+
+      const passwordStr = password instanceof Buffer ? password.toString('utf-8') : password;
+      const response = await api.post('/api/login', { email, password: passwordStr });
       
       if (response.data) {
         const token = response.data.access_token || response.data.token || (response.data.data && response.data.data.token);
@@ -38,13 +50,31 @@ export class ApiService {
           if (branchId) AuthService.setBranchId(branchId);
           return response.data;
         } else {
-          throw new Error(`Respuesta inválida: No se encontró token`);
+          throw new Error(`Respuesta inválida del servidor: no se encontró token en la respuesta. Contacte soporte.`);
         }
       } else {
-        throw new Error('Respuesta vacía del servidor');
+        throw new Error('Respuesta vacía del servidor.');
       }
     } catch (error: any) {
-      this.handleApiError(error);
+      // For login, extract the real server message instead of generic handling
+      if (error.response) {
+        const status = error.response.status;
+        const serverData = error.response.data;
+        const serverMsg = serverData?.message || serverData?.error || (typeof serverData === 'string' ? serverData : null);
+
+        if (status === 401 || status === 422) {
+          throw new Error(serverMsg || 'Credenciales incorrectas. Verifique su email y contraseña.');
+        }
+        if (status === 500) {
+          throw new Error(`Error del servidor (500). Intente nuevamente más tarde.`);
+        }
+        throw new Error(`Error ${status}: ${serverMsg || 'Error desconocido del servidor.'}`);
+      } else if (error.request) {
+        throw new Error('Error de Red: No se pudo conectar con el servidor. Verifique su conexión y la URL de la API.');
+      } else {
+        // Re-throw errors we created above (no response/request = our own throws)
+        throw error;
+      }
     }
   }
 
