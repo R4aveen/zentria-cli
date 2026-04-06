@@ -69,7 +69,8 @@ interface ShellProps {
 const Shell: React.FC<ShellProps> = ({ mode, onLogout }) => {
   const [view, setView] = useState<'menu' | 'scanner' | 'global-scanner' | 'info' | 'theme' | 'settings'>('menu');
   const [showPrompt, setShowPrompt] = useState(false);
-  const { command, setCommand, handleCommand } = useCommand({ onLogout, setView });
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const { command, setCommand, commandOutput, handleCommand } = useCommand({ onLogout, setView });
   const { exit } = useApp();
   const { columns, rows } = useTerminalSize();
   const { theme } = useTheme();
@@ -78,6 +79,11 @@ const Shell: React.FC<ShellProps> = ({ mode, onLogout }) => {
   // Pinning height and width to terminal size
   const shellHeight = Math.max(15, rows - 1); 
   const shellWidth = columns;
+
+  React.useEffect(() => {
+    const t = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useInput((input, key) => {
     if (key.ctrl && input === 'r') {
@@ -122,39 +128,47 @@ const Shell: React.FC<ShellProps> = ({ mode, onLogout }) => {
       width={shellWidth} 
       height={shellHeight} 
       paddingX={isWide ? 1 : 0} 
-      paddingY={0} // Fixed height handles padding
     >
-      {/* FIXED HEADER */}
+      {/* ┌── HEADER SECTION ──┐ */}
       <Box 
-        borderStyle="double" 
+        borderStyle="single" 
         borderColor={theme.border} 
         paddingX={1} 
         marginBottom={0}
         flexDirection={isWide ? 'row' : 'column'}
-        justifyContent={isWide ? 'space-between' : undefined}
+        justifyContent={isWide ? 'space-between' : 'flex-start'}
         width="100%"
       >
         <Box>
           <Text bold color={theme.primary}>
-            {isWide ? ' ₊⊹ ࣪ ִֶָ☾. ZENTRIA CLI ✴︎ ' : ' ZENTRIA ✴︎ '}
+            {isWide ? '❖ ZENTRIA_CLI │ ' : '❖ ZENTRIA │ '}
           </Text>
-          <Text color="white" backgroundColor={mode === 'online' ? theme.modeBadgeOnline : theme.modeBadgeOffline}>
-            {' '}{mode.toUpperCase()}{' '}
-          </Text>
+          <Box>
+            <Text 
+              color="white" 
+              bold 
+              backgroundColor={mode === 'online' ? theme.modeBadgeOnline : theme.modeBadgeOffline}
+            >
+               {mode === 'online' ? ' ▲ ONLINE ' : ' ▼ OFFLINE '}
+            </Text>
+          </Box>
         </Box>
+        
         {isWide && (
-          <Text color={theme.textDim}>
-            ☁︎ BR-{AuthService.getBranchId()} ⋆ {new Date().toLocaleTimeString()}
-          </Text>
+          <Box>
+            <Text color={theme.textDim}>
+               ⌗ SYS.BR-{AuthService.getBranchId()} │ 【┘】 {currentTime.toLocaleTimeString()}
+            </Text>
+          </Box>
         )}
       </Box>
 
-      {/* DYNAMIC CENTERED CONTENT */}
+      {/* ├── DYNAMIC CENTERED CONTENT ──┤ */}
       <Box 
-        key={`view-${view}`} // Unique key per view to force clean transition
+        key={`view-${view}`} 
         flexGrow={1} 
-        borderStyle="round" 
-        borderColor={!showPrompt ? theme.borderActive : 'gray'} 
+        borderStyle="single" 
+        borderColor={!showPrompt ? theme.borderActive : theme.textMuted} 
         paddingX={1}
         flexDirection="column"
         justifyContent="center"
@@ -166,23 +180,30 @@ const Shell: React.FC<ShellProps> = ({ mode, onLogout }) => {
         {view === 'theme' && <ThemeSelector onBack={() => setView('settings')} isActive={!showPrompt} />}
         {view === 'info' && <SystemInfoView mode={mode} />}
         {view === 'scanner' && (
-          mode === 'online' ? <OnlineTicketModule isActive={!showPrompt} /> : <OfflineTicketModule />
+          mode === 'online' ? <OnlineTicketModule isActive={!showPrompt} /> : <OfflineTicketModule isActive={!showPrompt} />
         )}
         {view === 'global-scanner' && (
           <GlobalScannerModule isActive={!showPrompt} onExit={() => setView('menu')} />
         )}
       </Box>
 
-      {/* QUICK PROMPT */}
+      {/* ├── QUICK COMMAND PROMPT ──┤ */}
       {showPrompt && (
-        <Box borderStyle="bold" borderColor={theme.accent} paddingX={1} marginTop={0} width="100%">
-          <Text color={theme.accent} bold>₊˚ෆ zentria {'>'} </Text>
-          <Text color="white">{command}</Text>
-          <Text backgroundColor="white" color="white"> </Text>
+        <Box borderStyle="single" borderColor={theme.accent} paddingX={1} marginTop={0} width="100%" flexDirection="column">
+          {commandOutput && (
+             <Box paddingBottom={1} marginBottom={1} borderBottom={true} borderStyle="single" borderColor={theme.border}>
+                <Text color={theme.textDim}>[{currentTime.toLocaleTimeString()}] ↳ {commandOutput}</Text>
+             </Box>
+          )}
+          <Box>
+            <Text color={theme.accent} bold>root@zentria ▻ </Text>
+            <Text color="white">{command}</Text>
+            <Text backgroundColor="white" color="white"> </Text>
+          </Box>
         </Box>
       )}
 
-      {/* FIXED FOOTER */}
+      {/* └── FOOTER SECTION ──┘ */}
       <Box 
         marginTop={0} 
         justifyContent={isWide ? 'space-between' : 'center'} 
@@ -191,11 +212,17 @@ const Shell: React.FC<ShellProps> = ({ mode, onLogout }) => {
       >
         {isWide ? (
           <>
-            <Text color={theme.textDim}> ╰┈➤ ESC: Volver/Salir </Text>
-            <Text color={theme.textDim}> 愛 CTRL+X: CLI </Text>
+            <Box>
+              <Text color={theme.textDim}>[ESC]</Text>
+              <Text color={theme.textMuted}> ⎋ Volver/Salir </Text>
+            </Box>
+            <Box>
+              <Text color={theme.textDim}>[CTRL+X]</Text>
+              <Text color={theme.textMuted}> ⌨ Modo Consola</Text>
+            </Box>
           </>
         ) : (
-          <Text color={theme.textDim}>ESC: Salir ⋆ CTRL+X: CLI</Text>
+          <Text color={theme.textMuted}>[ESC] ⎋ Salir │ [CTRL+X] ⌨ Consola</Text>
         )}
       </Box>
     </Box>

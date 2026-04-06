@@ -91,7 +91,11 @@ const openFileDialog = (): Promise<string | null> => {
 	});
 };
 
-export const OfflineTicketModule: React.FC = () => {
+interface OfflineTicketModuleProps {
+	isActive?: boolean;
+}
+
+export const OfflineTicketModule: React.FC<OfflineTicketModuleProps> = ({ isActive = true }) => {
 	const { theme } = useTheme();
 	const { stdout } = useStdout();
 	const columns = stdout?.columns || 100;
@@ -172,6 +176,7 @@ export const OfflineTicketModule: React.FC = () => {
 	};
 
 	useInput((input, key) => {
+		if (!isActive) return;
 		if (key.escape) {
 			if (step === 'printer') setStep('mode');
 			else if (step === 'excel') setStep('printer');
