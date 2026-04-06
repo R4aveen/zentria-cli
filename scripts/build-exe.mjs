@@ -16,6 +16,8 @@ const EXE = join(BUILD_DIR, 'zentria-cli.exe');
 const SEA_CONFIG = join(BUILD_DIR, 'sea-config.json');
 const ICO_PATH = join(ROOT, 'public', 'favicon.ico');
 const CER_PATH = join(BUILD_DIR, 'ZentriaCertificado.cer');
+const SUMATRA_SRC = join(ROOT, 'node_modules', 'pdf-to-printer', 'dist', 'SumatraPDF-3.4.6-32.exe');
+const SUMATRA_DEST = join(BUILD_DIR, 'SumatraPDF-3.4.6-32.exe');
 
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
 const VERSION = pkg.version;
@@ -84,7 +86,12 @@ await esbuild.build({
     'process.env.NODE_ENV': '"production"',
   },
   banner: {
-    js: "import{createRequire}from'node:module';const require=createRequire(import.meta.url);",
+    js: [
+      "import{createRequire}from'node:module';const require=createRequire(import.meta.url);",
+      "import{fileURLToPath as __pkg_ftp}from'node:url';import{dirname as __pkg_dn}from'node:path';",
+      "var __filename;try{__filename=__pkg_ftp(import.meta.url)}catch{__filename=process.execPath}",
+      "var __dirname=__pkg_dn(__filename);",
+    ].join(''),
   },
   minify: true,
   plugins: [envPlugin, {
@@ -102,6 +109,14 @@ await esbuild.build({
   }],
 });
 console.log('  ✓ Bundle generado');
+
+// 1b. Copiar SumatraPDF al directorio de distribución (necesario para impresión silenciosa)
+if (existsSync(SUMATRA_SRC)) {
+  copyFileSync(SUMATRA_SRC, SUMATRA_DEST);
+  console.log('  ✓ SumatraPDF copiado a build/');
+} else {
+  console.warn('  ⚠ SumatraPDF no encontrado en node_modules/pdf-to-printer');
+}
 
 // 2. Exportar certificado para embeber como asset SEA
 console.log('\n✧ Exportando certificado...');
@@ -210,6 +225,9 @@ console.log('\n✧ Aplicando icono y metadatos...');
 // 8. Firmar ejecutable con certificado autofirmado
 console.log('\n✧ Firmando ejecutable...');
 
+// Pequeño delay de seguridad para que Windows suelte el archivo tras los metadatos/antivirus
+await new Promise(r => setTimeout(r, 2000));
+
 try {
   const signScriptPath = join(BUILD_DIR, '_sign.ps1');
   const signScript = [
@@ -288,11 +306,18 @@ console.log('  ✓ "Iniciar Zentria.bat" generado');
 // 9b. Generar ZIP con los 3 archivos necesarios
 try {
   if (existsSync(DIST_ZIP)) unlinkSync(DIST_ZIP);
+  const zipFiles = [
+    `'${EXE}'`,
+    `'${CER_PATH}'`,
+    `'${INICIAR_BAT}'`,
+  ];
+  // Incluir SumatraPDF si existe
+  if (existsSync(SUMATRA_DEST)) {
+    zipFiles.push(`'${SUMATRA_DEST}'`);
+  }
   const zipCmd = [
     `Compress-Archive -Path`,
-    `'${EXE}',`,
-    `'${CER_PATH}',`,
-    `'${INICIAR_BAT}'`,
+    zipFiles.join(','),
     `-DestinationPath '${DIST_ZIP}' -Force`,
   ].join(' ');
   execSync(`powershell -NoProfile -Command "${zipCmd}"`, { stdio: 'inherit' });

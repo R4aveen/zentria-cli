@@ -1,54 +1,39 @@
-# Zentria CLI - Manual del Desarrollador
+# Zentria CLI - Manual del Desarrollador v1.2.0
 
 ## Descripción del Proyecto
-Zentria CLI es una herramienta de línea de comandos (CLI) interactiva diseñada para agilizar el flujo de revisión técnica en bodega del ecosistema Zentria ERP. Construida con **Node.js**, **TypeScript** e **Ink** (React para terminales), permite a los operarios autenticarse, escanear equipos mediante pistolas de códigos de barras e imprimir etiquetas térmicas de forma automática y silenciosa.
+Zentria CLI es una herramienta de terminal interactiva para el ecosistema Zentria ERP. Construida con **Node.js**, **TypeScript** e **Ink**, permite a los operarios autenticarse, escanear equipos e imprimir etiquetas térmicas de forma automática.
 
-### Características Principales
-- **Interfaz Reactiva**: Interfaz de terminal moderna con cursores parpadeantes y feedback visual.
-- **Autenticación Persistente**: Gestión de sesiones mediante tokens almacenados localmente.
-- **Modo Escáner**: Captura automática de entradas de teclado (simulando escáneres) para búsquedas instantáneas.
-- **Impresión Silenciosa**: Generación de etiquetas en formato PDF (vía Puppeteer) y envío directo a impresoras térmicas (80mm x 60mm).
-- **Soporte Multidispositivo**: Plantillas de impresión específicas para Notebooks, Desktops, AIO, Monitores y Dockings.
+### Características Principales v1.2.0
+- **Shell de Pantalla Única**: Contenedor principal en `app.tsx` que fija la altura y anchura al tamaño de la terminal (`rows - 1`), eliminando el scroll y el parpadeo.
+- **Navegación Multinivel**: Implementación de submenús (`SettingsMenuView`, `SystemInfoView`) con gestión de tecla `ESC` jerárquica.
+- **Paginación Inteligente**: El `ThemeSelector` utiliza una ventana deslizante para mostrar solo un subconjunto de los 13 temas disponibles.
+- **Recuperación de Terminal**: Atajo global `Ctrl+R` que limpia el buffer de `stdout` y fuerza un redibujado completo.
+- **Autenticación Resiliente**: Función `handleSubmit` en `LoginView` preparada para detectar el token en diversos formatos de API.
 
 ## Arquitectura de Software
-El proyecto sigue una arquitectura modular y orientada a servicios:
+Sistema modular y centrado en la estabilidad visual:
 
 - **Vistas (source/components)**:
-  - `LoginView`: Interfaz de acceso con campos de texto interactivos.
-  - `ScannerView`: Modo de escucha principal para el proceso de bodega.
-- **Servicios (source/services)**:
-  - `ApiService`: Comunicación centralizada con el backend de Laravel.
-  - `AuthService`: Gestión de configuración y tokens (soporta `.env`).
-  - `PrintService`: Lógica de renderizado HTML y procesos de impresión.
-- **Tipos (source/types)**: Definiciones de interfaces para el dominio técnico.
-
-## Guía de Inicio Rápido
-
-### Requisitos Previos
-- Node.js >= 16.
-- Google Chrome instalado (necesario para la generación de PDFs).
-- Impresora térmica configurada como predeterminada en Windows.
-
-### Instalación
-```bash
-npm install
-```
-
-### Configuración
-Crea un archivo `.env` en la raíz basado en `.env.example`:
-```env
-API_BASE_URL=http://tu-api-zentria.com
-CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe
-```
-
-### Comandos de Desarrollo
-- **Compilar**: `npm run build`
-- **Modo Observador**: `npm run dev`
-- **Ejecutar Localmente**: `node dist/cli.js`
-- **Vincular Globalmente**: `npm link` (luego usar el comando `zentria-cli`)
+  - `LoginView`: Pantalla de acceso multi-token.
+  - `MainMenuView`: Panel de control principal con grid dinámico.
+  - `SettingsMenuView`: Submenú para diagnósticos y apariencia.
+  - `ThemeSelector`: Selector con scroll y vista previa.
+- **Componentes comunes**:
+  - `SelectedGradient.tsx`: Renderizador de gradientes por "chunks" para máximo rendimiento.
+- **Servicios**:
+  - `ApiService`: Consumo de backend Laravel.
+  - `AuthService`: Gestión de tokens y configuración persistente.
+  - `PrintService`: Puppeteer -> PDF -> Impresora Térmica.
 
 ## Convenciones de Desarrollo
-- **Extensiones de Importación**: Debido al uso de ESM (ECMAScript Modules), todas las importaciones locales en los archivos fuente deben incluir la extensión `.js` (ej: `import { Service } from './service.js'`).
-- **Nomenclatura**: Uso de PascalCase para Componentes de Ink y camelCase para servicios y métodos.
-- **Estilos de Terminal**: Priorizar el uso de componentes `Box` y `Text` de Ink para mantener la consistencia visual.
-- **Validaciones**: Las peticiones a la API deben manejarse dentro del `ApiService` con bloques try/catch para proporcionar feedback descriptivo al usuario en la terminal.
+- **Estabilidad de Bordes**: Al usar `Box` de Ink, evitar anidamientos de bordes con `flexGrow` si no hay un ancho fijo, para prevenir artefactos en Windows CMD/PS.
+- **Keys Estables**: Todos los elementos de lista deben usar identificadores únicos (como el nombre del tema o el valor del ítem) en la prop `key`.
+- **Extensiones de Importación**: Usar `.js` en todas las importaciones locales.
+
+## Guía de Build (SEA)
+El proyecto se distribuye como un Single Executable Application (SEA):
+1. `npm run build` (TSC)
+2. `npm run bundle` (esbuild bundle ESM a `build/bundle.mjs`)
+3. `node scripts/build-exe.mjs` (SEA inyección + rcedit de iconos)
+
+El ejecutable final se firma y versiona automáticamente en la carpeta `build/`.

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { themes, themeNames } from '../constants/themes.js';
 import { useTheme } from '../contexts/ThemeContext.js';
 import { GradientText } from './common/GradientText.js';
 import { tinyAsciiLogo } from '../constants/ascii-art.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
+import { SelectedGradient } from './common/SelectedGradient.js';
 
 interface ThemeSelectorProps {
   onBack: () => void;
@@ -17,10 +18,27 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ onBack, isActive =
     themeNames.indexOf(currentTheme.name)
   );
   const { columns, rows } = useTerminalSize();
-  const isWide = columns >= 80;
-  const isShort = rows < 28;
+  
+  // Responsive Thresholds
+  const isWide = columns >= 90;
+  const isTall = rows >= 22;
+  const maxVisibleItems = isTall ? 6 : 4;
 
   const previewTheme = themes[themeNames[selectedIndex]!]!;
+
+  // Sliding Window Pagination Logic
+  const visibleRange = useMemo(() => {
+    let start = Math.max(0, selectedIndex - Math.floor(maxVisibleItems / 2));
+    let end = start + maxVisibleItems;
+
+    if (end > themeNames.length) {
+      end = themeNames.length;
+      start = Math.max(0, end - maxVisibleItems);
+    }
+    return { start, end };
+  }, [selectedIndex, maxVisibleItems]);
+
+  const visibleThemeNames = themeNames.slice(visibleRange.start, visibleRange.end);
 
   useInput((_input, key) => {
     if (!isActive) return;
@@ -40,56 +58,92 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ onBack, isActive =
   });
 
   return (
-    <Box flexDirection="column" padding={1}>
-      <Text bold underline color={previewTheme.primary}>✴︎ SELECCIONAR TEMA</Text>
+    <Box flexDirection="column" width="100%" alignItems="center" justifyContent="center">
+      {/* Title & Pagination Info */}
+      <Box marginBottom={1} justifyContent="space-between" width={isWide ? 80 : "95%"}>
+        <Text bold color={previewTheme.primary}>✴︎ SELECCIONAR TEMA</Text>
+        <Text color={previewTheme.textDim} italic>
+          [ {selectedIndex + 1} / {themeNames.length} ]
+        </Text>
+      </Box>
 
-      <Box marginTop={1} flexDirection={isWide ? 'row' : 'column'} gap={2}>
-        <Box flexDirection="column" flexBasis={isWide ? '50%' : undefined}>
-          {themeNames.map((name, index) => {
+      <Box flexDirection={isWide ? 'row' : 'column'} width="100%" justifyContent="center" alignItems="center">
+        {/* LIST PANEL */}
+        <Box 
+          flexDirection="column" 
+          width={isWide ? 42 : "95%"} 
+          borderStyle="single" 
+          borderColor={previewTheme.border} 
+          paddingX={1}
+          flexShrink={0}
+        >
+          {visibleThemeNames.map((name, index) => {
+            const absoluteIndex = visibleRange.start + index;
             const t = themes[name]!;
-            const isSelected = index === selectedIndex;
+            const isSelected = absoluteIndex === selectedIndex;
             const isCurrent = name === currentTheme.name;
+            
+            // Fixed width label to handle emojis gracefully and avoid border "pushing"
+            const labelText = ` ${t.label} ${isCurrent ? '(actual)' : ''} `;
+
             return (
-              <Box
+              <Box 
                 key={name}
-                borderStyle="round"
-                borderColor={isSelected ? previewTheme.borderActive : previewTheme.textMuted}
-                paddingX={1}
+                flexDirection="column" 
+                width="100%"
+                paddingY={0}
               >
-                <Text color={isSelected ? t.primary : previewTheme.textDim} bold={isSelected}>
-                  {isSelected ? '✧ ' : '· '}
-                  {t.label}
-                  {isCurrent ? ' ⋆ actual' : ''}
-                </Text>
+                {isSelected ? (
+                  <Box borderStyle="bold" borderColor={previewTheme.primary} width="100%" flexShrink={0}>
+                    <SelectedGradient 
+                        text={labelText.padEnd(isWide ? 36 : 30)} 
+                        isActive={true} 
+                        flexGrow={1} 
+                    />
+                  </Box>
+                ) : (
+                  <Box paddingX={2} paddingY={0} height={3}>
+                    <Text color={previewTheme.textDim} wrap="truncate-end">
+                      · {t.label} {isCurrent ? '(actual)' : ''}
+                    </Text>
+                  </Box>
+                )}
               </Box>
             );
           })}
         </Box>
 
-        {!isShort && (
-          <Box flexDirection="column" flexBasis={isWide ? '50%' : undefined} borderStyle="double" borderColor={previewTheme.accent} paddingX={1}>
-            <Text bold color={previewTheme.primary}>₊˚ෆ Vista Previa</Text>
-            <Box marginTop={1}>
+        {/* PREVIEW PANEL */}
+        {isTall && (
+          <Box 
+            flexDirection="column" 
+            width={isWide ? 42 : "95%"} 
+            marginLeft={isWide ? 2 : 0} 
+            marginTop={isWide ? 0 : 1}
+            borderStyle="double" 
+            borderColor={previewTheme.accent} 
+            paddingX={1}
+            flexShrink={0}
+          >
+            <Box marginBottom={1} justifyContent="center" borderStyle="single" borderColor={previewTheme.border}>
+               <Text bold color={previewTheme.primary}>₊˚ෆ VISTA PREVIA</Text>
+            </Box>
+            
+            <Box marginY={1} justifyContent="center" height={7}>
               <GradientText text={tinyAsciiLogo} gradient={previewTheme.gradient} />
             </Box>
-            <Box marginTop={1} flexDirection="column">
-              <Text color={previewTheme.primary}>╰┈➤ Color primario</Text>
-              <Text color={previewTheme.secondary}>╰┈➤ Color secundario</Text>
-              <Text color={previewTheme.accent}>╰┈➤ Color acento</Text>
-              <Text color={previewTheme.text}>╰┈➤ Color texto</Text>
-              <Text color={previewTheme.textDim}>╰┈➤ Color sutil</Text>
-            </Box>
-            <Box marginTop={1} borderStyle="single" borderColor={previewTheme.borderActive} paddingX={1}>
-              <Text color={previewTheme.primary} bold>✧ Item seleccionado</Text>
-            </Box>
-            <Box borderStyle="single" borderColor={previewTheme.textMuted} paddingX={1}>
-              <Text color={previewTheme.textDim}>· Item normal</Text>
+            
+            <Box flexDirection="column" paddingLeft={1}>
+              <Text color={previewTheme.primary}>╰┈➤ Primario: {previewTheme.primary}</Text>
+              <Text color={previewTheme.secondary}>╰┈➤ Secundario: {previewTheme.secondary}</Text>
+              <Text color={previewTheme.accent}>╰┈➤ Acento: {previewTheme.accent}</Text>
             </Box>
           </Box>
         )}
       </Box>
 
-      <Box marginTop={1}>
+      {/* FOOTER HINTS */}
+      <Box marginTop={1} width={isWide ? 80 : "95%"} justifyContent="center">
         <Text color={previewTheme.textDim} italic>
           ╰┈➤ ↑↓ Navegar ⋆ ENTER Aplicar ⋆ ESC Volver
         </Text>

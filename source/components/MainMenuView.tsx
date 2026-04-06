@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { Menu, type MenuItem } from './common/Menu.js';
 import { useTheme } from '../contexts/ThemeContext.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
+import { SelectedGradient } from './common/SelectedGradient.js';
+import { AppMode } from '../services/auth.service.js';
 
 interface MainMenuViewProps {
-  setView: (view: 'menu' | 'scanner' | 'global-scanner' | 'info' | 'theme') => void;
+  mode?: AppMode;
+  setView: (view: 'menu' | 'scanner' | 'global-scanner' | 'info' | 'theme' | 'settings') => void;
   onLogout: () => void;
   onExit: () => void;
   isActive?: boolean;
@@ -14,179 +16,119 @@ interface MainMenuViewProps {
 interface GridItem {
   label: string;
   value: string;
-  row: number;
-  col: number;
+  desc: string;
 }
 
-const mainGrid: GridItem[] = [
-  { label: '⚙ Configuración', value: 'config', row: 0, col: 0 },
-  { label: '☾ Cerrar Sesión', value: 'logout', row: 0, col: 1 },
-  { label: '✧ Impresión de Revisiones', value: 'print', row: 1, col: 0 },
-  { label: '← Salir', value: 'exit', row: 2, col: 0 },
+const mainItems: GridItem[] = [
+  { label: '✧ IMPRESIÓN DE REVISIONES', value: 'print', desc: 'Escaneo y despacho de etiquetas térmicas' },
+  { label: '⚙ CONFIGURACIÓN', value: 'config', desc: 'Ajustes de terminal, temas e info' },
+  { label: '☾ CERRAR SESIÓN', value: 'logout', desc: 'Salir de la cuenta actual' },
+  { label: '← SALIR DEL CLI', value: 'exit', desc: 'Cerrar la terminal de Zentria' },
 ];
 
-const uniqueRows = [...new Set(mainGrid.map(i => i.row))].sort((a, b) => a - b);
+const Dashboard: React.FC<{ mode?: string; theme: any; isWide: boolean; time: string }> = ({ mode, theme, isWide, time }) => (
+  <Box 
+    flexDirection="column" 
+    borderStyle="round" 
+    borderColor={theme.border} 
+    paddingX={1} 
+    width={isWide ? 28 : "100%"}
+    marginBottom={isWide ? 0 : 1}
+  >
+    <Box paddingX={1}><Text color="black" backgroundColor={theme.border} bold> SYSTEM INFO </Text></Box>
+    <Box flexDirection="column" marginTop={1}>
+      <Text color={theme.text} dimColor>USUARIO: <Text color={theme.primary} bold dimColor={false}>ZENTRIA-OP</Text></Text>
+      <Text color={theme.text} dimColor>SUCURSAL: <Text color={theme.secondary} bold dimColor={false}>BODEGA-主</Text></Text>
+      <Text color={theme.text} dimColor>MODO: <Text color={theme.success} bold dimColor={false}>{mode?.toUpperCase()}</Text></Text>
+      <Text color={theme.text} dimColor>HORA: <Text color={theme.text} bold dimColor={false}>{time}</Text></Text>
+    </Box>
+  </Box>
+);
 
-export const MainMenuView: React.FC<MainMenuViewProps> = ({ setView, onLogout, onExit, isActive = true }) => {
+export const MainMenuView: React.FC<MainMenuViewProps> = ({ mode, setView, onLogout, onExit, isActive = true }) => {
   const { theme } = useTheme();
-  const { columns } = useTerminalSize();
-  const isWide = columns >= 60;
-  const [phase, setPhase] = useState<'main' | 'print' | 'config'>('main');
+  const { columns, rows } = useTerminalSize();
+  
+  const isWide = columns >= 95;
+  const isTall = rows >= 18;
+  
   const [focusedIndex, setFocusedIndex] = useState(0);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useInput((_input, key) => {
     if (!isActive) return;
 
-    if (key.escape) {
-      if (phase === 'main') {
-        onExit();
-      } else {
-        setPhase('main');
-      }
-      return;
-    }
-
-    if (phase !== 'main') return;
-
-    const current = mainGrid[focusedIndex]!;
-
-    if (key.upArrow || key.downArrow) {
-      const rowIdx = uniqueRows.indexOf(current.row);
-      const newRowIdx = key.upArrow
-        ? (rowIdx > 0 ? rowIdx - 1 : uniqueRows.length - 1)
-        : (rowIdx < uniqueRows.length - 1 ? rowIdx + 1 : 0);
-      const newRow = uniqueRows[newRowIdx]!;
-      const itemsInRow = mainGrid.filter(i => i.row === newRow);
-      const target = itemsInRow.reduce((closest, item) =>
-        Math.abs(item.col - current.col) < Math.abs(closest.col - current.col) ? item : closest
-      );
-      setFocusedIndex(mainGrid.indexOf(target));
-    }
-
-    if (key.leftArrow || key.rightArrow) {
-      const itemsInRow = mainGrid.filter(i => i.row === current.row);
-      if (itemsInRow.length <= 1) return;
-      const colIdx = itemsInRow.indexOf(current);
-      const newColIdx = key.leftArrow
-        ? (colIdx > 0 ? colIdx - 1 : itemsInRow.length - 1)
-        : (colIdx < itemsInRow.length - 1 ? colIdx + 1 : 0);
-      setFocusedIndex(mainGrid.indexOf(itemsInRow[newColIdx]!));
-    }
+    if (key.upArrow) setFocusedIndex(p => (p <= 0 ? mainItems.length - 1 : p - 1));
+    if (key.downArrow) setFocusedIndex(p => (p >= mainItems.length - 1 ? 0 : p + 1));
 
     if (key.return) {
+      const current = mainItems[focusedIndex]!;
       switch (current.value) {
-        case 'print': setPhase('print'); break;
-        case 'config': setPhase('config'); break;
+        case 'print': 
+          if (mode === 'offline') setView('scanner');
+          else setView('global-scanner');
+          break;
+        case 'config': setView('settings'); break;
         case 'logout': onLogout(); break;
         case 'exit': onExit(); break;
       }
     }
   });
 
-  // --- Print submenu ---
-  if (phase === 'print') {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Text bold underline color={theme.primary}>✧ IMPRESIÓN DE REVISIONES</Text>
-        <Menu
-          items={[
-            { label: '✧ Listar Lotes (Por Lote)', value: 'scanner' },
-            { label: '⋆ Imprimir por Serie (Búsqueda Global)', value: 'global-scanner' },
-          ]}
-          onSelect={(item: MenuItem) => setView(item.value as any)}
-          isActive={isActive}
-        />
-        <Box marginTop={1}>
-          <Text color={theme.textDim} italic>╰┈➤ ESC: Volver al menú</Text>
-        </Box>
-      </Box>
-    );
-  }
-
-  // --- Config submenu ---
-  if (phase === 'config') {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Text bold underline color={theme.primary}>⚙ CONFIGURACIÓN</Text>
-        <Menu
-          items={[
-            { label: '𖦹 Información del Sistema', value: 'info' },
-            { label: '✴︎ Cambiar Tema', value: 'theme' },
-          ]}
-          onSelect={(item: MenuItem) => setView(item.value as any)}
-          isActive={isActive}
-        />
-        <Box marginTop={1}>
-          <Text color={theme.textDim} italic>╰┈➤ ESC: Volver al menú</Text>
-        </Box>
-      </Box>
-    );
-  }
-
-  // --- Main grid ---
-  const renderItem = (item: GridItem, grow?: number) => {
-    const idx = mainGrid.indexOf(item);
-    const isSelected = idx === focusedIndex && isActive;
-    return (
-      <Box
-        key={item.value}
-        borderStyle="round"
-        borderColor={isSelected ? theme.borderActive : theme.textMuted}
-        paddingX={2}
-        flexGrow={grow ?? 1}
-      >
-        <Text color={isSelected ? theme.primary : '#B0B0B0'} bold={isSelected}>
-          {isSelected ? '✧ ' : '· '}{item.label}
-        </Text>
-      </Box>
-    );
-  };
-
-  const row1 = mainGrid.filter(i => i.row === 1);
+  const menuWidth = isWide ? Math.min(60, columns - 32) : "100%";
 
   return (
-    <Box flexDirection="column" padding={1}>
-      {isWide ? (
-        <Box alignItems="center" marginBottom={1}>
-          <Box flexGrow={1} justifyContent="flex-start">
-            {renderItem(mainGrid.find(i => i.value === 'config')!, 0)}
-          </Box>
-          <Box flexShrink={0} paddingX={2}>
-            <Text bold underline color={isActive ? theme.primary : 'white'}>
-              ₊˚ෆ MENÚ PRINCIPAL
-            </Text>
-          </Box>
-          <Box flexGrow={1} justifyContent="flex-end">
-            {renderItem(mainGrid.find(i => i.value === 'logout')!, 0)}
-          </Box>
-        </Box>
-      ) : (
-        <Box flexDirection="column" marginBottom={1}>
-          <Box justifyContent="center" marginBottom={1}>
-            <Text bold underline color={isActive ? theme.primary : 'white'}>
-              ₊˚ෆ MENÚ PRINCIPAL
-            </Text>
-          </Box>
-          <Box gap={1}>
-            {renderItem(mainGrid.find(i => i.value === 'config')!)}
-            {renderItem(mainGrid.find(i => i.value === 'logout')!)}
-          </Box>
-        </Box>
-      )}
+    <Box 
+        flexDirection={isWide ? "row" : "column"} 
+        width="100%"
+        alignItems={isWide ? "flex-start" : "center"} 
+        justifyContent="center"
+        paddingX={isWide ? 2 : 1}
+    >
+        {/* Render Dashboard */}
+        {!isWide && <Dashboard mode={mode} theme={theme} isWide={isWide} time={currentTime.toLocaleTimeString()} />}
+        {isWide && <Dashboard mode={mode} theme={theme} isWide={isWide} time={currentTime.toLocaleTimeString()} />}
 
-      <Box>{row1.map(item => renderItem(item))}</Box>
+        {/* MENU OPTIONS */}
+        <Box 
+            flexDirection="column" 
+            width={menuWidth} 
+            marginLeft={isWide ? 2 : 0}
+            alignItems={isWide ? "flex-start" : "center"}
+        >
+            {isTall && (
+                <Box marginBottom={1}>
+                    <Text color={theme.text} dimColor bold>SELECCIONE UNA OPERACIÓN:</Text>
+                </Box>
+            )}
 
-      <Box marginTop={1}>
-        {renderItem(mainGrid.find(i => i.value === 'exit')!, 0)}
-      </Box>
+            {mainItems.map((item, idx) => {
+                const isSelected = idx === focusedIndex;
+                const paddedLabel = `  ${item.label}  `.padEnd(isWide ? 40 : Math.min(columns - 10, 40));
 
-      {isActive && (
-        <Box marginTop={1} justifyContent="center">
-          <Text color={theme.textDim} italic>
-            {isWide ? '╰┈➤ ↑↓←→ Navegar ⋆ ENTER Seleccionar ⋆ ESC Salir' : '↑↓←→ ⋆ ENTER ⋆ ESC'}
-          </Text>
+                return (
+                    <Box key={item.value} marginBottom={isSelected && isTall ? 1 : 0} flexDirection="column" width="100%">
+                        <Box 
+                            borderStyle={isSelected ? "bold" : "single"} 
+                            borderColor={isSelected ? theme.primary : theme.border}
+                            width="100%"
+                        >
+                            <SelectedGradient text={paddedLabel} isActive={isSelected} flexGrow={1} />
+                        </Box>
+                        {isSelected && isTall && (
+                             <Box paddingLeft={2} marginTop={-1}>
+                                <Text color={theme.accent} bold>╰┈➤ {item.desc}</Text>
+                             </Box>
+                        )}
+                    </Box>
+                );
+            })}
         </Box>
-      )}
     </Box>
   );
 };

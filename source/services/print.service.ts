@@ -16,7 +16,7 @@ import { AuthService } from './auth.service.js';
 
 const _dirname = (() => {
   try { return path.dirname(fileURLToPath(import.meta.url)); }
-  catch { return typeof __dirname !== 'undefined' ? __dirname : process.cwd(); }
+  catch { return process.cwd(); }
 })();
 
 export class PrintService {
@@ -292,9 +292,32 @@ export class PrintService {
     `;
   }
 
-  static async print(item: TechnicalItem) {
+  /**
+   * Encuentra la ruta de SumatraPDF para impresión silenciosa.
+   * En producción (SEA/exe) busca junto al ejecutable.
+   * En desarrollo busca dentro de node_modules.
+   */
+  private static getSumatraPdfPath(): string {
+    // 1. Junto al ejecutable (modo producción / distribución)
+    const exeDir = path.dirname(process.execPath);
+    const exePath = path.join(exeDir, 'SumatraPDF-3.4.6-32.exe');
+    if (fs.existsSync(exePath)) return exePath;
+
+    // 2. En node_modules (modo desarrollo)
+    const nmPath = path.join(_dirname, '..', '..', 'node_modules', 'pdf-to-printer', 'dist', 'SumatraPDF-3.4.6-32.exe');
+    if (fs.existsSync(nmPath)) return nmPath;
+
+    // 3. Fallback: directorio de trabajo actual
+    const cwdPath = path.join(process.cwd(), 'SumatraPDF-3.4.6-32.exe');
+    if (fs.existsSync(cwdPath)) return cwdPath;
+
+    return '';
+  }
+
+  static async print(item: TechnicalItem, printerName?: string | null) {
     const html = await this.generateHtml(item);
-    const tempPdf = path.join(os.tmpdir(), `zentria_label_${Date.now()}.pdf`);
+    const randomId = Math.random().toString(36).substring(2, 7);
+    const tempPdf = path.join(os.tmpdir(), `zentria_label_${Date.now()}_${randomId}.pdf`);
 
     const browser = await puppeteer.launch({
       executablePath: AuthService.getChromePath(),
@@ -315,8 +338,27 @@ export class PrintService {
     });
 
     await browser.close();
-    await ptp.print(tempPdf);
-    fs.unlinkSync(tempPdf);
+
+    // Opciones de impresión: ruta explícita de SumatraPDF + impresora seleccionada
+    const printOptions: Record<string, any> = {};
+    const sumatraPath = this.getSumatraPdfPath();
+    if (sumatraPath) {
+      printOptions['sumatraPdfPath'] = sumatraPath;
+    }
+    if (printerName) {
+      printOptions['printer'] = printerName;
+    }
+
+    try {
+      await ptp.print(tempPdf, printOptions);
+    } finally {
+      // Intentar borrar incluso si falló la impresión, pero sin lanzar error si el archivo ya no existe
+      try {
+        if (fs.existsSync(tempPdf)) {
+          fs.unlinkSync(tempPdf);
+        }
+      } catch {}
+    }
   }
 
   static async openLabelInWord(item: TechnicalItem) {

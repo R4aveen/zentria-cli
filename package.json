@@ -1,6 +1,6 @@
 {
 	"name": "zentria-cli",
-	"version": "1.1.6",
+	"version": "1.2.0",
 	"license": "MIT",
 	"bin": "dist/cli.js",
 	"type": "module",
@@ -28,7 +28,8 @@
 		"pdf-to-printer": "^5.7.0",
 		"puppeteer-core": "^24.39.0",
 		"qrcode": "^1.5.4",
-		"react": "^18.2.0"
+		"react": "^18.2.0",
+		"xlsx": "^0.18.5"
 	},
 	"devDependencies": {
 		"@sindresorhus/tsconfig": "^3.0.1",
