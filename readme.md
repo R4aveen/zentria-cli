@@ -6,15 +6,15 @@ Construida con **Node.js**, **TypeScript**, **React** e **Ink** (React para term
 
 ---
 
-## Características v1.2.0 (Premium)
+## Características v1.2.0
 
-- **Interfaz TUI Ultra-Estable**: Sistema de "Pantalla Única" con centrado absoluto y sin parpadeo (Flicker-Free).
-- **13 Temas Visuales Pro**: Lavanda, Océano, Sakura, Esmeralda, Atardecer, Escarcha, Medianoche, Rosa Dorado + **Cyberpunk, Matrix, Retro, Dracula, Nórdico**.
-- **Navegación por Capas**: Submenús de configuración independientes y navegación rápida por teclado (`ESC` dinámico).
-- **Control de Paginación**: Selector de temas con ventana deslizante (scrolling) para terminales pequeñas.
-- **Recuperación Instantánea**: Atajo `Ctrl+R` para limpiar y redibujar la terminal ante cualquier error visual.
-- **Modo Offline Optimizado**: Escaneo y despacho de tickets local con resolución de rutas dinámica en el ejecutable.
-- **Fix Crítico de Auth**: Soporte para múltiples esquemas de token (`access_token`, `token`, `data.token`).
+- **Renderizado Optimizado**: Sistema de "Pantalla Única" con centrado absoluto y eliminación de parpadeo (Flicker-Free).
+- **13 Temas Visuales**: Lavanda, Océano, Sakura, Esmeralda, Atardecer, Escarcha, Medianoche, Rosa Dorado + Cyberpunk, Matrix, Retro, Dracula, Nórdico.
+- **Navegación Multicapa**: Submenús de configuración independientes y navegación por teclado optimizada (`ESC` dinámico).
+- **Paginación Inteligente**: Selector de temas con ventana deslizante para resoluciones variables de terminal.
+- **Recuperación de Plataforma**: Atajo `Ctrl+R` para limpiar y redibujar la terminal ante artefactos del sistema.
+- **Modo Offline Mejorado**: Escaneo y despacho de tickets local con resolución de rutas dinámica en el ejecutable.
+- **Autenticación Reforzada**: Soporte para múltiples esquemas de token (`access_token`, `token`, `data.token`).
 
 ## Requisitos Previos
 
@@ -86,13 +86,13 @@ source/
 ├── cli.tsx                       # Entry point
 ├── app.tsx                       # Shell principal "Single Screen"
 ├── components/
-│   ├── LoginView.tsx             # Login Multi-Token
-│   ├── MainMenuView.tsx          # Menú principal equilibrado
-│   ├── SettingsMenuView.tsx      # Submenú de configuración [NUEVO]
-│   ├── SystemInfoView.tsx        # Diagnóstico Premium [NUEVO]
-│   ├── ThemeSelector.tsx         # Selector con paginación
+│   ├── LoginView.tsx             # Autenticación multi-token
+│   ├── MainMenuView.tsx          # Menú principal
+│   ├── SettingsMenuView.tsx      # Submenú de configuración
+│   ├── SystemInfoView.tsx        # Información del sistema
+│   ├── ThemeSelector.tsx         # Selector con paginación inteligente
 │   └── common/
-│       ├── SelectedGradient.tsx  # Motor de gradiente optimizado
+│       ├── SelectedGradient.tsx  # Motor de renderizado de gradientes
 │       └── ...
 ...
 ```
@@ -111,7 +111,7 @@ source/
 
 | Versión | Fecha | Highlights |
 |---------|-------|------------|
-| [**v1.2.0**](./releases/v1.2.0.md) | 06 abr 2026 | **Premium Evolution**: Pantalla única, ficker-free, 13 temas, paginación, fix auth y recovery Ctrl+R |
+| [**v1.2.0**](./releases/v1.2.0.md) | 06 abr 2026 | Estabilización UI, renderizado Flicker-Free, paginación inteligente, navegación multicapa, autenticación reforzada y recuperación de plataforma |
 | [**v1.1.6**](./releases/v1.1.6.md) | 12 mar 2026 | Firma digital, certificado embebido en SEA, bypass SmartScreen, GitHub Actions |
 | [**v1.0.0**](./releases/v1.0.0.md) | 11 mar 2026 | Ejecutable portable .exe, 8 temas, inyección de env vars, icono resedit |
 
