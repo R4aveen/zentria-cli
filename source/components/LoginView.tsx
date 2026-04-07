@@ -85,8 +85,10 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
         {renderHeader()}
         <Box 
           flexDirection="column" 
-          padding={isTall ? 2 : 1} 
-          borderStyle="double" 
+          alignItems="center" // <-- Centra el contenido internamente
+          paddingY={isTall ? 1 : 0}
+          paddingX={2}
+          borderStyle="single" 
           borderColor={theme.primary} 
           width={Math.min(columns - 4, 60)}
         >
@@ -116,25 +118,29 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
       {renderHeader()}
       
       <Box 
-        flexDirection="column" 
-        padding={isTall ? 2 : 1} 
-        borderStyle="round" 
+        flexDirection="column"
+        alignItems="center" // <-- Forzamos centrado total
+        paddingY={isTall ? 1 : 0}
+        paddingX={2}
+        borderStyle="single" 
         borderColor={theme.border} 
         width={Math.min(columns - 4, 60)}
       >
-        <Box marginBottom={1} justifyContent="center" borderStyle="single" borderColor={theme.accent}>
+        <Box marginBottom={1} justifyContent="center" paddingBottom={1}>
            <Text bold color={theme.accent}> 🔐 ACCESO RESTRINGIDO </Text>
         </Box>
 
-        <Box flexDirection="column" marginY={1}>
+        {/* CONTENEDOR DEL FORMULARIO - Ancho fijo para centrar el bloque entero */}
+        <Box flexDirection="column" width={columns < 55 ? '100%' : 46} marginY={1}>
+          
           {/* Email Field */}
-          <Box marginBottom={1} flexDirection={columns < 50 ? 'column' : 'row'}>
-            <Box width={columns < 50 ? '100%' : 12}>
+          <Box marginBottom={1} flexDirection={columns < 55 ? 'column' : 'row'} alignItems={columns < 55 ? 'flex-start' : 'center'}>
+            <Box width={columns < 55 ? '100%' : 12} justifyContent={columns < 55 ? 'flex-start' : 'flex-end'} paddingRight={1}>
                <Text color={focus === 'email' ? theme.primary : theme.text} bold={focus === 'email'}>
                  Email:
                </Text>
             </Box>
-            <Box flexGrow={1} borderStyle="single" borderColor={focus === 'email' ? theme.primary : theme.border}>
+            <Box flexGrow={1} width={columns < 55 ? '100%' : undefined} borderStyle="single" borderColor={focus === 'email' ? theme.primary : theme.border}>
                <TextInput
                  value={email}
                  onChange={setEmail}
@@ -145,13 +151,13 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
           </Box>
 
           {/* Password Field */}
-          <Box marginBottom={1} flexDirection={columns < 50 ? 'column' : 'row'}>
-            <Box width={columns < 50 ? '100%' : 12}>
+          <Box marginBottom={1} flexDirection={columns < 55 ? 'column' : 'row'} alignItems={columns < 55 ? 'flex-start' : 'center'}>
+            <Box width={columns < 55 ? '100%' : 12} justifyContent={columns < 55 ? 'flex-start' : 'flex-end'} paddingRight={1}>
                <Text color={focus === 'password' ? theme.primary : theme.text} bold={focus === 'password'}>
                  Password:
                </Text>
             </Box>
-            <Box flexGrow={1} borderStyle="single" borderColor={focus === 'password' ? theme.primary : theme.border}>
+            <Box flexGrow={1} width={columns < 55 ? '100%' : undefined} borderStyle="single" borderColor={focus === 'password' ? theme.primary : theme.border}>
                <TextInput
                  value={password}
                  onChange={setPassword}
@@ -161,16 +167,16 @@ export const LoginView: React.FC<Props> = ({ onLoginSuccess, onOfflineMode }) =>
                />
             </Box>
           </Box>
-        </Box>
 
-        {/* Submit Button */}
-        <Box marginTop={1} justifyContent="center">
-          <Box borderStyle="bold" borderColor={focus === 'submit' ? theme.success : theme.border} width="100%">
-             <SelectedGradient 
-               text={loading ? "  VALIDANDO...  " : "    ENTRAR AL SISTEMA    "} 
-               isActive={focus === 'submit'} 
-               flexGrow={1}
-             />
+          {/* Submit Button */}
+          <Box marginTop={1} justifyContent="center" width="100%">
+            <Box borderStyle="single" borderColor={focus === 'submit' ? theme.success : theme.border} width="100%">
+               <SelectedGradient 
+                 text={loading ? "  VALIDANDO...  " : "    ENTRAR AL SISTEMA    "} 
+                 isActive={focus === 'submit'} 
+                 flexGrow={1}
+               />
+            </Box>
           </Box>
         </Box>
 

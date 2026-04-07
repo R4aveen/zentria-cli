@@ -261,11 +261,12 @@ export const themes: Record<string, Theme> = {
     textDim: '#4C566A',
     textMuted: '#2E3440',
     success: '#A3BE8C', // Sage Green
-    error: '#BF616A',   // Aurora Red
+    error: '#BF616A',
     errorText: '#D08770',
     modeBadgeOnline: '#5E81AC',
     modeBadgeOffline: '#81A1C1',
-    gradient: ['#2E3440', '#3B4252', '#434C5E', '#4C566A', '#5E81AC', '#81A1C1', '#88C0D0', '#ECEFF4'],
+    // gradient: ['#2E3440', '#3B4252', '#434C5E', '#4C566A', '#5E81AC', '#81A1C1', '#88C0D0', '#ECEFF4'],
+    gradient: ['#ECEFF4', '#88C0D0', '#81A1C1', '#5E81AC', '#4C566A', '#434C5E', '#3B4252', '#2E3440'],
   },
 };
 
