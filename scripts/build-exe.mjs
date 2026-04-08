@@ -18,6 +18,9 @@ const ICO_PATH = join(ROOT, 'public', 'favicon.ico');
 const CER_PATH = join(BUILD_DIR, 'ZentriaCertificado.cer');
 const SUMATRA_SRC = join(ROOT, 'node_modules', 'pdf-to-printer', 'dist', 'SumatraPDF-3.4.6-32.exe');
 const SUMATRA_DEST = join(BUILD_DIR, 'SumatraPDF-3.4.6-32.exe');
+const WINDOWS_POWERSHELL_EXE = process.env.WINDIR
+  ? join(process.env.WINDIR, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
+  : 'powershell.exe';
 
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
 const VERSION = pkg.version;
@@ -83,6 +86,11 @@ const archivePreviousBuildArtifacts = () => {
 };
 
 archivePreviousBuildArtifacts();
+
+const runWindowsPowerShellFile = (scriptPath) => {
+  const command = `"${WINDOWS_POWERSHELL_EXE}" -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`;
+  execSync(command, { stdio: 'inherit' });
+};
 
 // Leer variables de .env.production para inyectarlas en build-time
 const envProdPath = join(ROOT, '.env.production');
@@ -182,19 +190,26 @@ if (existsSync(SUMATRA_SRC)) {
 console.log('\n✧ Exportando certificado...');
 {
   const certScriptPath = join(BUILD_DIR, '_export-cert.ps1');
+  try { unlinkSync(CER_PATH); } catch {}
   const certScript = [
+    `$ErrorActionPreference = 'Stop'`,
     `$certName = 'ZentriaCLI'`,
-    `$cert = Get-ChildItem -Path Cert:\\CurrentUser\\My -CodeSigningCert | Where-Object { $_.Subject -eq "CN=$certName" } | Select-Object -First 1`,
+    `if (-not (Test-Path 'Cert:\\CurrentUser\\My')) { throw 'No se encontró el proveedor de certificados de Windows (Cert:). Ejecuta el build en Windows PowerShell 5.1.' }`,
+    `$cert = Get-ChildItem -Path Cert:\\CurrentUser\\My | Where-Object { $_.Subject -eq "CN=$certName" -and $_.HasPrivateKey } | Select-Object -First 1`,
     `if (-not $cert) {`,
     `  Write-Host '  Creando certificado autofirmado...'`,
     `  $cert = New-SelfSignedCertificate -Subject "CN=$certName" -Type CodeSigningCert -CertStoreLocation Cert:\\CurrentUser\\My -NotAfter (Get-Date).AddYears(5)`,
     `}`,
-    `Export-Certificate -Cert $cert -FilePath '${CER_PATH}' | Out-Null`,
+    `Export-Certificate -Cert $cert -FilePath '${CER_PATH}' -Force | Out-Null`,
+    `if (-not (Test-Path '${CER_PATH}')) { throw 'No se pudo exportar el certificado .cer' }`,
     `Write-Host "  Thumbprint: $($cert.Thumbprint)"`,
   ].join('\n');
   writeFileSync(certScriptPath, certScript, 'utf-8');
-  execSync(`powershell -NoProfile -ExecutionPolicy Bypass -File "${certScriptPath}"`, { stdio: 'inherit' });
+  runWindowsPowerShellFile(certScriptPath);
   try { unlinkSync(certScriptPath); } catch {}
+  if (!existsSync(CER_PATH)) {
+    throw new Error('No se generó build/ZentriaCertificado.cer. Build cancelado para evitar distribuir un paquete inválido.');
+  }
   console.log('  ✓ Certificado exportado → build/ZentriaCertificado.cer');
 }
 
@@ -292,15 +307,17 @@ await new Promise(r => setTimeout(r, 2000));
 try {
   const signScriptPath = join(BUILD_DIR, '_sign.ps1');
   const signScript = [
+    `$ErrorActionPreference = 'Stop'`,
     `$certName = 'ZentriaCLI'`,
-    `$cert = Get-ChildItem -Path Cert:\\CurrentUser\\My -CodeSigningCert | Where-Object { $_.Subject -eq "CN=$certName" } | Select-Object -First 1`,
+    `if (-not (Test-Path 'Cert:\\CurrentUser\\My')) { throw 'No se encontró el proveedor de certificados de Windows (Cert:).' }`,
+    `$cert = Get-ChildItem -Path Cert:\\CurrentUser\\My | Where-Object { $_.Subject -eq "CN=$certName" -and $_.HasPrivateKey } | Select-Object -First 1`,
     `if (-not $cert) { throw 'Certificado no encontrado. Ejecuta el build completo.' }`,
     `Set-AuthenticodeSignature -FilePath '${EXE}' -Certificate $cert | Out-Null`,
     `$sig = Get-AuthenticodeSignature -FilePath '${EXE}'`,
     `Write-Host "  Status: $($sig.Status)"`,
   ].join('\n');
   writeFileSync(signScriptPath, signScript, 'utf-8');
-  execSync(`powershell -NoProfile -ExecutionPolicy Bypass -File "${signScriptPath}"`, { stdio: 'inherit' });
+  runWindowsPowerShellFile(signScriptPath);
   try { unlinkSync(signScriptPath); } catch {}
   console.log('  ✓ Ejecutable firmado');
 } catch (err) {
