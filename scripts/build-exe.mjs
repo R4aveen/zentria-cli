@@ -194,7 +194,7 @@ console.log('\n✧ Exportando certificado...');
   const certScript = [
     `$ErrorActionPreference = 'Stop'`,
     `$certName = 'ZentriaCLI'`,
-    `$stores = @('Cert:\\CurrentUser\\My', 'Cert:\\LocalMachine\\My')`,`
+    `$stores = @('Cert:\\CurrentUser\\My', 'Cert:\\LocalMachine\\My')`,
     `$cert = $null`,
     `foreach ($store in $stores) {`,
     `  if (Test-Path $store) {`,
@@ -320,7 +320,7 @@ try {
   const signScript = [
     `$ErrorActionPreference = 'Stop'`,
     `$certName = 'ZentriaCLI'`,
-    `$stores = @('Cert:\\CurrentUser\\My', 'Cert:\\LocalMachine\\My')`,`
+    `$stores = @('Cert:\\CurrentUser\\My', 'Cert:\\LocalMachine\\My')`,
     `$cert = $null`,
     `foreach ($store in $stores) {`,
     `  if (Test-Path $store) {`,
