@@ -194,8 +194,7 @@ console.log('\n✧ Exportando certificado...');
   const certScript = [
     `$ErrorActionPreference = 'Stop'`,
     `$certName = 'ZentriaCLI'`,
-    `Import-Module Microsoft.PowerShell.Security -ErrorAction SilentlyContinue`,
-    `$stores = @('Cert:\\CurrentUser\\My', 'Cert:\\LocalMachine\\My')`,
+    `$stores = @('Cert:\\CurrentUser\\My', 'Cert:\\LocalMachine\\My')`,`
     `$cert = $null`,
     `foreach ($store in $stores) {`,
     `  if (Test-Path $store) {`,
@@ -321,8 +320,7 @@ try {
   const signScript = [
     `$ErrorActionPreference = 'Stop'`,
     `$certName = 'ZentriaCLI'`,
-    `Import-Module Microsoft.PowerShell.Security -ErrorAction SilentlyContinue`,
-    `$stores = @('Cert:\\CurrentUser\\My', 'Cert:\\LocalMachine\\My')`,
+    `$stores = @('Cert:\\CurrentUser\\My', 'Cert:\\LocalMachine\\My')`,`
     `$cert = $null`,
     `foreach ($store in $stores) {`,
     `  if (Test-Path $store) {`,
