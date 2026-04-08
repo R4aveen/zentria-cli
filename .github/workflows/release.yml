@@ -21,13 +21,15 @@ jobs:
       - name: Crear certificado y compilar
         run: node scripts/build-exe.mjs
 
-      - name: Subir Zentria-Setup.exe como Release
+      - name: Subir ZIP compilado como Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/Zentria-Setup.exe
+          files: build/Zentria-CLI-${{ github.ref_name }}.zip
           name: Zentria CLI ${{ github.ref_name }}
           body: |
             ## Instrucciones
-            1. Descarga **Zentria-Setup.exe**
-            2. Doble clic → acepta los permisos de administrador
-            3. ¡Listo! Zentria CLI se abrirá automáticamente
+            1. Descarga **Zentria-CLI-${{ github.ref_name }}.zip**
+            2. Descomprime el ZIP
+            3. Doble clic en **Iniciar Zentria.bat**
+            4. Acepta los permisos de administrador si Windows lo pide
+            5. ¡Listo! Zentria CLI se abrirá automáticamente

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, renameSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, unlinkSync, renameSync } from 'node:fs';
+import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import esbuild from 'esbuild';
 import * as ResEdit from 'resedit';
@@ -21,8 +21,68 @@ const SUMATRA_DEST = join(BUILD_DIR, 'SumatraPDF-3.4.6-32.exe');
 
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf-8'));
 const VERSION = pkg.version;
+const DIST_ZIP = join(BUILD_DIR, `Zentria-CLI-v${VERSION}.zip`);
+const ARCHIVE_DIR = join(BUILD_DIR, 'archive');
+const RELEASE_ARCHIVE_DIR = join(ARCHIVE_DIR, 'releases');
+const LEGACY_ARCHIVE_DIR = join(ARCHIVE_DIR, 'legacy');
+const VERSIONED_ZIP_PATTERN = /^Zentria-CLI-v(\d+\.\d+\.\d+)\.zip$/i;
+const LEGACY_ROOT_FILES = new Set([
+  'Zentria-Setup.exe',
+  'Zentria-CLI.zip',
+  'instalar-certificado.bat',
+  'SumatraPDF-settings.txt',
+  'err.txt',
+  'stderr.txt',
+  '_sign.ps1',
+  '_export-cert.ps1',
+  'zentria-cli.exe.old',
+]);
 
 if (!existsSync(BUILD_DIR)) mkdirSync(BUILD_DIR, { recursive: true });
+
+const ensureDirectory = (directoryPath) => {
+  if (!existsSync(directoryPath)) {
+    mkdirSync(directoryPath, { recursive: true });
+  }
+};
+
+const archiveFile = (sourcePath, destinationDirectory) => {
+  ensureDirectory(destinationDirectory);
+  const targetPath = join(destinationDirectory, basename(sourcePath));
+
+  if (existsSync(targetPath)) {
+    unlinkSync(targetPath);
+  }
+
+  renameSync(sourcePath, targetPath);
+  console.log(`  ↳ Archivado: ${basename(sourcePath)} → ${destinationDirectory}`);
+};
+
+const archivePreviousBuildArtifacts = () => {
+  ensureDirectory(ARCHIVE_DIR);
+  ensureDirectory(RELEASE_ARCHIVE_DIR);
+  ensureDirectory(LEGACY_ARCHIVE_DIR);
+
+  for (const entryName of readdirSync(BUILD_DIR)) {
+    const entryPath = join(BUILD_DIR, entryName);
+
+    if (!statSync(entryPath).isFile()) {
+      continue;
+    }
+
+    const zipMatch = entryName.match(VERSIONED_ZIP_PATTERN);
+    if (zipMatch) {
+      archiveFile(entryPath, join(RELEASE_ARCHIVE_DIR, `v${zipMatch[1]}`));
+      continue;
+    }
+
+    if (LEGACY_ROOT_FILES.has(entryName)) {
+      archiveFile(entryPath, LEGACY_ARCHIVE_DIR);
+    }
+  }
+};
+
+archivePreviousBuildArtifacts();
 
 // Leer variables de .env.production para inyectarlas en build-time
 const envProdPath = join(ROOT, '.env.production');
@@ -169,7 +229,8 @@ if (existsSync(EXE)) {
     const old = EXE + '.old';
     try { unlinkSync(old); } catch {}
     renameSync(EXE, old);
-    console.log('  ⚠ Ejecutable anterior estaba bloqueado, renombrado a .old');
+    archiveFile(old, LEGACY_ARCHIVE_DIR);
+    console.log('  ⚠ Ejecutable anterior estaba bloqueado, archivado en build/archive/legacy/');
   }
 }
 copyFileSync(process.execPath, EXE);
@@ -252,7 +313,6 @@ console.log(`\n✴︎ Ejecutable generado → ${EXE}`);
 // 9. Generar paquete de distribución (ZIP con .bat lanzador)
 // SmartScreen NO bloquea archivos .bat ni .zip — solo .exe desconocidos
 console.log('\n✧ Generando paquete de distribución...');
-const DIST_ZIP = join(BUILD_DIR, `Zentria-CLI-v${VERSION}.zip`);
 const INICIAR_BAT = join(BUILD_DIR, 'Iniciar Zentria.bat');
 
 // 9a. Crear "Iniciar Zentria.bat" — instala cert + exclusión Defender + lanza el CLI
@@ -303,29 +363,84 @@ const iniciarContent = [
 writeFileSync(INICIAR_BAT, iniciarContent, 'utf-8');
 console.log('  ✓ "Iniciar Zentria.bat" generado');
 
-// 9b. Generar ZIP con los 3 archivos necesarios
+// 9b. Generar ZIP con SOLO los archivos necesarios (exe, bat, cer, SumatraPDF)
+console.log('\n✧ Validando archivos para distribución...');
+
+// Validar que existan TODOS los archivos críticos
+const requiredFiles = [
+  { path: EXE, name: 'zentria-cli.exe' },
+  { path: CER_PATH, name: 'ZentriaCertificado.cer' },
+  { path: INICIAR_BAT, name: 'Iniciar Zentria.bat' },
+];
+
+const optionalFiles = [
+  { path: SUMATRA_DEST, name: 'SumatraPDF-3.4.6-32.exe' },
+];
+
+// Verificar archivos requeridos
+let missingRequired = [];
+for (const file of requiredFiles) {
+  if (!existsSync(file.path)) {
+    missingRequired.push(file.name);
+    console.error(`  ✗ FALTA: ${file.name}`);
+  } else {
+    console.log(`  ✓ ${file.name}`);
+  }
+}
+
+if (missingRequired.length > 0) {
+  throw new Error(`\n❌ No se puede generar ZIP. Archivos faltantes: ${missingRequired.join(', ')}`);
+}
+
+// Recolectar archivos para el ZIP
+const zipFiles = [
+  `'${EXE}'`,
+  `'${CER_PATH}'`,
+  `'${INICIAR_BAT}'`,
+];
+
+// Agregar opcionales si existen
+for (const file of optionalFiles) {
+  if (existsSync(file.path)) {
+    zipFiles.push(`'${file.path}'`);
+    console.log(`  ✓ ${file.name} (incluido)`);
+  } else {
+    console.warn(`  ⊘ ${file.name} (no incluido)`);
+  }
+}
+
+// Generar ZIP
 try {
   if (existsSync(DIST_ZIP)) unlinkSync(DIST_ZIP);
-  const zipFiles = [
-    `'${EXE}'`,
-    `'${CER_PATH}'`,
-    `'${INICIAR_BAT}'`,
-  ];
-  // Incluir SumatraPDF si existe
-  if (existsSync(SUMATRA_DEST)) {
-    zipFiles.push(`'${SUMATRA_DEST}'`);
-  }
+  
   const zipCmd = [
     `Compress-Archive -Path`,
     zipFiles.join(','),
     `-DestinationPath '${DIST_ZIP}' -Force`,
   ].join(' ');
+  
+  console.log('\n✧ Comprimiendo archivos...');
   execSync(`powershell -NoProfile -Command "${zipCmd}"`, { stdio: 'inherit' });
-  console.log(`  ✓ ZIP generado → ${DIST_ZIP}`);
+  
+  console.log(`\n✓ ZIP generado → ${DIST_ZIP}`);
+  console.log(`  Contenido:`);
+  console.log(`    - zentria-cli.exe (ejecutable compilado)`);
+  console.log(`    - ZentriaCertificado.cer (certificado autofirmado)`);
+  console.log(`    - Iniciar Zentria.bat (lanzador con setup)`);
+  if (existsSync(SUMATRA_DEST)) {
+    console.log(`    - SumatraPDF-3.4.6-32.exe (para impresión)`);
+  }
 } catch (err) {
-  console.warn('  ⚠ Error generando ZIP:', err.message);
+  console.error('  ❌ Error generando ZIP:', err.message);
+  throw err;
 }
 
-console.log(`\n✴︎ ¡Build completo!`);
-console.log('  Distribuir: build/Zentria-CLI.zip');
-console.log('  El usuario descomprime, doble clic en "Iniciar Zentria.bat" y listo.');
+console.log(`\n✴︎ Build completado exitosamente!`);
+console.log(`\n📦 Para distribuir a usuarios finales:`);
+console.log(`  1. Subir "${DIST_ZIP}" como Release Asset en GitHub`);
+console.log(`  2. Tag de release: v${VERSION}`);
+console.log(`  3. Los usuarios descargan el ZIP`);
+console.log(`  4. Descomprimen y ejecutan "Iniciar Zentria.bat"`);
+console.log(`\n💡 Nota: Hook useCliVersion.ts buscará archivos que coincidan con:`);
+console.log(`    - Nombre: Zentria-CLI-v*.zip`);
+console.log(`    - Ubicación: GitHub Releases Assets`);
