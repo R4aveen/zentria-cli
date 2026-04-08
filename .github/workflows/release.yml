@@ -21,7 +21,7 @@ jobs:
           node-version: 22
 
       - name: Instalar dependencias
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Validar tag vs package.json
         shell: pwsh
