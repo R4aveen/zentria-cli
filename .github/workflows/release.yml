@@ -35,6 +35,7 @@ jobs:
           Write-Host "✓ Versiones alineadas: v$pkgVersion"
 
       - name: Crear certificado y compilar
+        shell: cmd
         run: node scripts/build-exe.mjs
 
       - name: Verificar ZIP generado
