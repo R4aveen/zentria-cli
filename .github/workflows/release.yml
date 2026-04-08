@@ -5,9 +5,14 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      RELEASE_ZIP: build/Zentria-CLI-${{ github.ref_name }}.zip
     steps:
       - uses: actions/checkout@v4
 
@@ -18,13 +23,34 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Validar tag vs package.json
+        shell: pwsh
+        run: |
+          $pkgVersion = node -p "require('./package.json').version"
+          $tagVersion = "${{ github.ref_name }}".TrimStart('v')
+          if ($pkgVersion -ne $tagVersion) {
+            Write-Error "Version mismatch: package.json=$pkgVersion, tag=${{ github.ref_name }}"
+            exit 1
+          }
+          Write-Host "✓ Versiones alineadas: v$pkgVersion"
+
       - name: Crear certificado y compilar
         run: node scripts/build-exe.mjs
+
+      - name: Verificar ZIP generado
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${{ env.RELEASE_ZIP }}")) {
+            Write-Error "No se encontró el ZIP esperado: ${{ env.RELEASE_ZIP }}"
+            Get-ChildItem build -Recurse | Select-Object FullName
+            exit 1
+          }
+          Write-Host "✓ ZIP listo: ${{ env.RELEASE_ZIP }}"
 
       - name: Subir ZIP compilado como Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/Zentria-CLI-${{ github.ref_name }}.zip
+          files: ${{ env.RELEASE_ZIP }}
           name: Zentria CLI ${{ github.ref_name }}
           body: |
             ## Instrucciones

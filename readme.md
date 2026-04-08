@@ -69,6 +69,23 @@ npm run build:exe
 
 El ejecutable se genera en `build/zentria-cli.exe` (~85 MB).
 
+### Publicacion por Tags (GitHub Releases)
+
+Este proyecto publica descargables mediante tags Git, no subiendo ZIPs al repositorio.
+
+Flujo recomendado:
+
+1. Actualiza `version` en `package.json` (por ejemplo `1.2.1`).
+2. Crea y empuja el tag con la misma version (`v1.2.1`).
+3. GitHub Actions ejecuta `build-exe.mjs`.
+4. Se publica `build/Zentria-CLI-v1.2.1.zip` como Release Asset.
+
+Notas importantes:
+
+- `build/` esta ignorado por `.gitignore`, esto no borra archivos, solo evita subir artefactos locales al repo.
+- Si `package.json` y el tag no coinciden, el workflow falla para evitar subir una version incorrecta.
+- Las versiones viejas se archivan localmente en `build/archive/` durante cada build.
+
 ## Navegación
 
 | Tecla | Acción |
