@@ -6,7 +6,7 @@ Construida con **Node.js**, **TypeScript**, **React** e **Ink** (React para term
 
 ---
 
-## Características v1.2.0
+## Características v1.2.1
 
 - **Renderizado Optimizado**: Sistema de "Pantalla Única" con centrado absoluto y eliminación de parpadeo (Flicker-Free).
 - **13 Temas Visuales**: Lavanda, Océano, Sakura, Esmeralda, Atardecer, Escarcha, Medianoche, Rosa Dorado + Cyberpunk, Matrix, Retro, Dracula, Nórdico.
@@ -15,6 +15,9 @@ Construida con **Node.js**, **TypeScript**, **React** e **Ink** (React para term
 - **Recuperación de Plataforma**: Atajo `Ctrl+R` para limpiar y redibujar la terminal ante artefactos del sistema.
 - **Modo Offline Mejorado**: Escaneo y despacho de tickets local con resolución de rutas dinámica en el ejecutable.
 - **Autenticación Reforzada**: Soporte para múltiples esquemas de token (`access_token`, `token`, `data.token`).
+- **Release Pipeline Robusto**: Validación automática de tag vs package.json y verificación obligatoria del ZIP antes de publicar en GitHub Releases.
+- **Build Limpio y Trazable**: Archivado automático de versiones anteriores en `build/archive/releases` y residuos legacy en `build/archive/legacy`.
+- **Firma/Certificado Estable**: Ejecución explícita con Windows PowerShell para evitar fallos de proveedor `Cert:` en exportación y firma.
 
 ## Requisitos Previos
 
@@ -128,6 +131,7 @@ source/
 
 | Versión | Fecha | Highlights |
 |---------|-------|------------|
+| [**v1.2.1**](./releases/v1.2.1.md) | 08 abr 2026 | Release de corrección: estabilidad de compilación/firma, orden de artefactos y publicación confiable por tags |
 | [**v1.2.0**](./releases/v1.2.0.md) | 06 abr 2026 | Estabilización UI, renderizado Flicker-Free, paginación inteligente, navegación multicapa, autenticación reforzada y recuperación de plataforma |
 | [**v1.1.6**](./releases/v1.1.6.md) | 12 mar 2026 | Firma digital, certificado embebido en SEA, bypass SmartScreen, GitHub Actions |
 | [**v1.0.0**](./releases/v1.0.0.md) | 11 mar 2026 | Ejecutable portable .exe, 8 temas, inyección de env vars, icono resedit |
