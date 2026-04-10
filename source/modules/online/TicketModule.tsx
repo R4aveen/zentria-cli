@@ -86,6 +86,7 @@ export const OnlineTicketModule: React.FC<OnlineTicketModuleProps> = ({ isActive
       isActive={isActive} 
     />
   );
+  
 };
 
 interface ScannerViewProps {

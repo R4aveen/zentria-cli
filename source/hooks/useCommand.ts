@@ -19,6 +19,10 @@ const KNOWLEDGE_BASE = [
     intents: ['tema', 'color', 'colores', 'apariencia', 'oscuro', 'claro'], 
     response: "Para cambiar los colores ve a 'CONFIGURACIÓN' (⚙) > 'APARIENCIA' en el menú principal, o usa el comando rápido '/theme'." 
   },
+  {
+    intents: ['qr', 'codigo qr', 'genera qr', 'crear qr', 'logo qr'],
+    response: "Usa 'GENERA TU QR' desde el menú principal o escribe '/qr'. Podrás ingresar texto, elegir logo y guardar en usuario/escritorio automáticamente.",
+  },
   { 
     intents: ['offline', 'internet', 'conexion', 'red', 'sin internet', 'desconectado'], 
     response: "Si no tienes internet en bodega, cambia a Modo Offline.\nLa validación se hará localmente con un Excel. Comando útil: '/info' para ver estado." 
@@ -58,6 +62,11 @@ export const useCommand = ({ onLogout, setView }: UseCommandProps) => {
         return;
       case '/theme':
         setView('theme');
+        setCommand('');
+        setCommandOutput('');
+        return;
+      case '/qr':
+        setView('qr-generator');
         setCommand('');
         setCommandOutput('');
         return;

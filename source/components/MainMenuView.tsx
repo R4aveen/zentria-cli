@@ -1,15 +1,22 @@
-import React, {useState} from 'react';
-import {Box, Text, useInput} from 'ink';
-import {useTheme} from '../contexts/ThemeContext.js';
-import {useTerminalSize} from '../hooks/useTerminalSize.js';
-import {SelectedGradient} from './common/SelectedGradient.js';
-import {AppMode} from '../services/auth.service.js';
-import {Clock} from './common/Clock.js';
+import React, { useState } from 'react';
+import { Box, Text, useInput } from 'ink';
+import { useTheme } from '../contexts/ThemeContext.js';
+import { useTerminalSize } from '../hooks/useTerminalSize.js';
+import { SelectedGradient } from './common/SelectedGradient.js';
+import { AppMode } from '../services/auth.service.js';
+import { Clock } from './common/Clock.js';
 
 interface MainMenuViewProps {
 	mode?: AppMode;
 	setView: (
-		view: 'menu' | 'scanner' | 'global-scanner' | 'info' | 'theme' | 'settings',
+		view:
+			| 'menu'
+			| 'scanner'
+			| 'global-scanner'
+			| 'info'
+			| 'theme'
+			| 'settings'
+			| 'qr-generator',
 	) => void;
 	onLogout: () => void;
 	onExit: () => void;
@@ -22,30 +29,20 @@ interface GridItem {
 	desc: string;
 }
 
-const mainItems: GridItem[] = [
+const operationItems: GridItem[] = [
 	{
 		label: '✧ IMPRESIÓN DE REVISIONES',
 		value: 'print',
 		desc: 'Escaneo y despacho de etiquetas térmicas',
 	},
 	{
-		label: '⚙ CONFIGURACIÓN',
-		value: 'config',
-		desc: 'Ajustes de terminal, temas e info',
-	},
-	{
-		label: '☾ CERRAR SESIÓN',
-		value: 'logout',
-		desc: 'Salir de la cuenta actual',
-	},
-	{
-		label: '← SALIR DEL CLI',
-		value: 'exit',
-		desc: 'Cerrar la terminal de Zentria',
+		label: '◈ GENERA TU QR',
+		value: 'qr-generator',
+		desc: 'Crear QR con texto y logo personalizado',
 	},
 ];
 
-const Dashboard: React.FC<{mode?: string; theme: any; isWide: boolean}> = ({
+const Dashboard: React.FC<{ mode?: string; theme: any; isWide: boolean }> = ({
 	mode,
 	theme,
 	isWide,
@@ -97,8 +94,8 @@ export const MainMenuView: React.FC<MainMenuViewProps> = ({
 	onExit,
 	isActive = true,
 }) => {
-	const {theme} = useTheme();
-	const {columns, rows} = useTerminalSize();
+	const { theme } = useTheme();
+	const { columns, rows } = useTerminalSize();
 
 	const isWide = columns >= 95;
 	const isTall = rows >= 18;
@@ -108,26 +105,35 @@ export const MainMenuView: React.FC<MainMenuViewProps> = ({
 	useInput((_input, key) => {
 		if (!isActive) return;
 
+		if (_input.toLowerCase() === 'q') {
+			onExit();
+			return;
+		}
+
+		if (_input.toLowerCase() === 'l') {
+			onLogout();
+			return;
+		}
+
+		if (_input.toLowerCase() === 'c') {
+			setView('settings');
+			return;
+		}
+
 		if (key.upArrow)
-			setFocusedIndex(p => (p <= 0 ? mainItems.length - 1 : p - 1));
+			setFocusedIndex(p => (p <= 0 ? operationItems.length - 1 : p - 1));
 		if (key.downArrow)
-			setFocusedIndex(p => (p >= mainItems.length - 1 ? 0 : p + 1));
+			setFocusedIndex(p => (p >= operationItems.length - 1 ? 0 : p + 1));
 
 		if (key.return) {
-			const current = mainItems[focusedIndex]!;
+			const current = operationItems[focusedIndex]!;
 			switch (current.value) {
 				case 'print':
 					if (mode === 'offline') setView('scanner');
 					else setView('global-scanner');
 					break;
-				case 'config':
-					setView('settings');
-					break;
-				case 'logout':
-					onLogout();
-					break;
-				case 'exit':
-					onExit();
+				case 'qr-generator':
+					setView('qr-generator');
 					break;
 			}
 		}
@@ -135,68 +141,99 @@ export const MainMenuView: React.FC<MainMenuViewProps> = ({
 
 	const menuWidth = isWide ? Math.min(60, columns - 32) : '100%';
 
+
 	return (
-		<Box
-			flexDirection={isWide ? 'row' : 'column'}
-			width="100%"
-			alignItems={isWide ? 'flex-start' : 'center'}
-			justifyContent="center"
-			paddingX={isWide ? 2 : 1}
-		>
-			{/* Render Dashboard */}
-			{!isWide && <Dashboard mode={mode} theme={theme} isWide={isWide} />}
-			{isWide && <Dashboard mode={mode} theme={theme} isWide={isWide} />}
+        <Box
+            flexDirection="column"
+            width="100%"
+            height="100%"
+            flexGrow={1}
+            paddingX={isWide ? 2 : 1}
+            justifyContent="space-between"
+        >
+            {/* Header: Salir / Cerrar Sesión */}
+            <Box width="100%" justifyContent="space-between">
+                <Box borderStyle="single" borderColor={theme.border} paddingX={1}>
+                    <Text color={theme.text} dimColor>
+                        [Q] ← SALIR
+                    </Text>
+                </Box>
+                <Box borderStyle="single" borderColor={theme.border} paddingX={1}>
+                    <Text color={theme.text} dimColor>
+                        [L] ☾ CERRAR SESIÓN
+                    </Text>
+                </Box>
+            </Box>
 
-			{/* MENU OPTIONS */}
-			<Box
-				flexDirection="column"
-				width={menuWidth}
-				marginLeft={isWide ? 2 : 0}
-				alignItems={isWide ? 'flex-start' : 'center'}
-			>
-				{isTall && (
-					<Box marginBottom={1}>
-						<Text color={theme.text} dimColor bold>
-							SELECCIONE UNA OPERACIÓN:
-						</Text>
-					</Box>
-				)}
+            {/* CONTENEDOR CENTRAL: Aquí es donde ocurre el centrado */}
+            <Box
+                flexDirection={isWide ? 'row' : 'column'}
+                width="100%"
+                alignItems="center" // Centra verticalmente los elementos entre sí (Dashboard vs Menu)
+                justifyContent="center" // Centra el grupo entero horizontalmente
+                flexGrow={1}
+            >
+                <Dashboard mode={mode} theme={theme} isWide={isWide} />
 
-				{mainItems.map((item, idx) => {
-					const isSelected = idx === focusedIndex;
-					const paddedLabel = `  ${item.label}  `.padEnd(
-						isWide ? 40 : Math.min(columns - 10, 40),
-					);
+                <Box
+                    flexDirection="column"
+                    width={menuWidth}
+                    marginLeft={isWide ? 4 : 0} // Un poco más de espacio si es ancho
+                    alignItems={isWide ? 'flex-start' : 'center'}
+                >
+                    {isTall && (
+                        <Box marginBottom={1}>
+                            <Text color={theme.text} dimColor bold>
+                                SELECCIONE UNA OPERACIÓN:
+                            </Text>
+                        </Box>
+                    )}
 
-					return (
-						<Box
-							key={item.value}
-							marginBottom={isSelected && isTall ? 1 : 0}
-							flexDirection="column"
-							width="100%"
-						>
-							<Box
-								borderStyle={isSelected ? 'bold' : 'single'}
-								borderColor={isSelected ? theme.primary : theme.border}
-								width="100%"
-							>
-								<SelectedGradient
-									text={paddedLabel}
-									isActive={isSelected}
-									flexGrow={1}
-								/>
-							</Box>
-							{isSelected && isTall && (
-								<Box paddingLeft={2} marginTop={-1}>
-									<Text color={theme.accent} bold>
-										╰┈➤ {item.desc}
-									</Text>
-								</Box>
-							)}
-						</Box>
-					);
-				})}
-			</Box>
-		</Box>
-	);
+                    {operationItems.map((item, idx) => {
+                        const isSelected = idx === focusedIndex;
+                        // Ajustamos el padding dinámico para que no rompa el centrado
+                        const paddedLabel = `  ${item.label}  `.padEnd(
+                            isWide ? 40 : Math.min(columns - 10, 40),
+                        );
+
+                        return (
+                            <Box
+                                key={item.value}
+                                marginBottom={isSelected && isTall ? 1 : 0}
+                                flexDirection="column"
+                                width="100%"
+                            >
+                                <Box
+                                    borderStyle={isSelected ? 'bold' : 'single'}
+                                    borderColor={isSelected ? theme.primary : theme.border}
+                                    width="100%"
+                                >
+                                    <SelectedGradient
+                                        text={paddedLabel}
+                                        isActive={isSelected}
+                                    />
+                                </Box>
+                                {isSelected && isTall && (
+                                    <Box paddingLeft={2} marginTop={-1}>
+                                        <Text color={theme.accent} bold>
+                                            ╰┈➤ {item.desc}
+                                        </Text>
+                                    </Box>
+                                )}
+                            </Box>
+                        );
+                    })}
+                </Box>
+            </Box>
+
+            {/* Footer: Configuración */}
+            <Box width="100%" justifyContent="flex-end">
+                <Box borderStyle="single" borderColor={theme.border} paddingX={1}>
+                    <Text color={theme.text} dimColor>
+                        [C] ⚙ CONFIGURACIÓN
+                    </Text>
+                </Box>
+            </Box>
+        </Box>
+    );
 };

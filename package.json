@@ -24,6 +24,7 @@
 		"dotenv": "^17.3.1",
 		"ink": "^4.1.0",
 		"ink-text-input": "^6.0.0",
+		"jimp": "^1.6.1",
 		"meow": "^11.0.0",
 		"pdf-to-printer": "^5.7.0",
 		"puppeteer-core": "^24.39.0",
