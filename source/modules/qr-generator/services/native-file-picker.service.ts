@@ -6,7 +6,7 @@ const WINDOWS_POWERSHELL_EXE = windir
   ? `${windir}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe`
   : 'powershell.exe';
 
-export const pickLogoFileNative = (): string | undefined => {
+export const pickLogoFileNative = (): string | undefined => {   
   if (process.platform !== 'win32') {
     return undefined;
   }
