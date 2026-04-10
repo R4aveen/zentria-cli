@@ -51,14 +51,29 @@ const ensureDirectory = (directoryPath) => {
 
 const archiveFile = (sourcePath, destinationDirectory) => {
   ensureDirectory(destinationDirectory);
-  const targetPath = join(destinationDirectory, basename(sourcePath));
+  let targetPath = join(destinationDirectory, basename(sourcePath));
 
   if (existsSync(targetPath)) {
-    unlinkSync(targetPath);
+    try {
+      unlinkSync(targetPath);
+    } catch (error) {
+      if (error?.code === 'EPERM' || error?.code === 'EACCES') {
+        const uniqueSuffix = `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        targetPath = join(
+          destinationDirectory,
+          `${basename(sourcePath)}.${uniqueSuffix}`,
+        );
+        console.warn(
+          `  ⚠ Archivo archivado en uso, se guardará con nombre alterno: ${basename(targetPath)}`,
+        );
+      } else {
+        throw error;
+      }
+    }
   }
 
   renameSync(sourcePath, targetPath);
-  console.log(`  ↳ Archivado: ${basename(sourcePath)} → ${destinationDirectory}`);
+  console.log(`  ↳ Archivado: ${basename(sourcePath)} → ${targetPath}`);
 };
 
 const archivePreviousBuildArtifacts = () => {
