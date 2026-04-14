@@ -405,7 +405,12 @@ export const GenerateQrModule: React.FC<GenerateQrModuleProps> = ({
   });
 
   return (
-    <Box width="100%" justifyContent="center" alignItems="center" flexGrow={1}>
+    <Box
+      width="100%"
+      justifyContent={result ? 'center' : 'flex-start'}
+      alignItems={result ? 'center' : 'stretch'}
+      flexGrow={1}
+    >
       {result ? (
         <GenerateQrResult result={result} />
       ) : (
@@ -413,6 +418,7 @@ export const GenerateQrModule: React.FC<GenerateQrModuleProps> = ({
           qrTypeLabel={QR_TYPE_LABELS[qrType]}
           primaryLabel={formatPrimaryLabel(qrType)}
           secondaryLabel={formatSecondaryLabel(qrType)}
+          focusOrder={focusOrder}
           showSecondary={showSecondary}
           showWifiSecurity={showWifiSecurity}
           showAdvancedCustomization={showAdvancedCustomization}

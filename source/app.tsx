@@ -6,7 +6,7 @@ import {MainMenuView} from './components/MainMenuView.js';
 import {OnlineTicketModule} from './modules/online/TicketModule.js';
 import {GlobalScannerModule} from './modules/online/GlobalScannerModule.js';
 import {OfflineTicketModule} from './modules/offline/TicketModule.js';
-import {GenerateQrModule} from './modules/qr-generator/index.js';
+import {GenerateQrModule} from './modules/qr-generator/GenerateQrModule.js';
 import {ThemeSelector} from './components/ThemeSelector.js';
 import {SettingsMenuView} from './components/SettingsMenuView.js';
 import {SystemInfoView} from './components/SystemInfoView.js';
@@ -192,8 +192,16 @@ const Shell: React.FC<ShellProps> = ({mode, onLogout}) => {
 				borderColor={!showPrompt ? theme.borderActive : theme.textMuted}
 				paddingX={1}
 				flexDirection="column"
-				justifyContent={view === 'menu' ? 'flex-start' : 'center'}
-				alignItems={view === 'menu' ? 'stretch' : 'center'}
+				justifyContent={
+					view === 'menu' || view === 'qr-generator' || view === 'scanner' || view === 'global-scanner'
+						? 'flex-start'
+						: 'center'
+				}
+				alignItems={
+					view === 'menu' || view === 'qr-generator' || view === 'scanner' || view === 'global-scanner'
+						? 'stretch'
+						: 'center'
+				}
 				width="100%"
 			>
 				{view === 'menu' && (

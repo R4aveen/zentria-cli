@@ -20,6 +20,16 @@ const normalizeKey = (s: string): string => {
     .replace(/\./g, ""); // Sin puntos (ej: s.o -> so)
 };
 
+const SERIAL_HEADER_ALIASES = new Set([
+  "serie",
+  "serial",
+  "serial number",
+  "sn",
+  "s/n",
+  "numero de serie",
+  "n° serie",
+].map(normalizeKey));
+
 export class OfflineService {
   static parseExcel(filePath: string): OfflineItem[] {
     const cleanPath = filePath.replace(/['"]/g, "").trim();
@@ -68,18 +78,32 @@ export class OfflineService {
       if (rows.length === 0) continue;
 
       let bestRowIdx = 0;
-      let bestHits = -1;
       
-      for (let i = 0; i < Math.min(15, rows.length); i++) {
+      const headerScanLimit = Math.min(60, rows.length);
+      let bestScore = -1;
+      for (let i = 0; i < headerScanLimit; i++) {
         const rowVals = rows[i]!;
         let hits = 0;
+        let hasSerialHeader = false;
+        let nonEmpty = 0;
+
         for (const val of rowVals) {
-          if (expectedKeys.has(normalizeKey(String(val)))) {
+          const normalized = normalizeKey(String(val));
+          if (!normalized) continue;
+          nonEmpty++;
+
+          if (expectedKeys.has(normalized)) {
             hits++;
           }
+
+          if (SERIAL_HEADER_ALIASES.has(normalized)) {
+            hasSerialHeader = true;
+          }
         }
-        if (hits > bestHits) {
-          bestHits = hits;
+
+        const score = hits * 5 + (hasSerialHeader ? 3 : 0) + (nonEmpty > 3 ? 1 : 0);
+        if (score > bestScore) {
+          bestScore = score;
           bestRowIdx = i;
         }
       }

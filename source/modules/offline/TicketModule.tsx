@@ -381,7 +381,6 @@ export const OfflineTicketModule: React.FC<OfflineTicketModuleProps> = ({
 				<Box
 					flexDirection="column"
 					width={isCompact ? '100%' : '65%'}
-					height="100%"
 					flexGrow={1}
 					borderStyle="round"
 					borderColor={theme.borderActive}
@@ -389,7 +388,7 @@ export const OfflineTicketModule: React.FC<OfflineTicketModuleProps> = ({
 					minHeight={isTall ? 10 : 8}
 				>
 					{step === 'mode' && (
-						<Box flexDirection="column" justifyContent="center" flexGrow={1}>
+						<Box flexDirection="column" justifyContent="flex-start" flexGrow={1} paddingTop={1}>
 							<Box marginBottom={1}>
 								<Text bold color={theme.primary}>
 									➜ Flujo de trabajo:

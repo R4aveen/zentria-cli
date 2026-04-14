@@ -9,15 +9,30 @@ export const Clock: React.FC<{
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
-        // Actualizar cada segundo para tiempo completo, o cada 60s para formato corto
+        // Mantener el reloj alineado al siguiente segundo para evitar saltos visuales.
         const interval = format === 'full' ? 1000 : 60000;
         const t = setInterval(() => setCurrentTime(new Date()), interval);
         return () => clearInterval(t);
     }, [format]);
 
-    const display = format === 'full' 
-        ? currentTime.toLocaleTimeString()
-        : currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const display = format === 'full'
+        ? currentTime.toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+        })
+        : currentTime.toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+        });
 
-    return <Text color={color} dimColor={dimColor}>{display}</Text>;
+    const width = format === 'full' ? 14 : 8;
+
+    return (
+        <Text color={color} dimColor={dimColor}>
+            {display.padEnd(width, ' ')}
+        </Text>
+    );
 };

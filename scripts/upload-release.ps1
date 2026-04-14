@@ -11,8 +11,6 @@ param(
 
 # Constantes
 $REPO = "R4aveen/zentria-cli"
-$OWNER = "R4aveen"
-$REPO_NAME = "zentria-cli"
 $BUILD_DIR = Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) "build"
 
 # Si no se especifica versión, leerla de package.json
